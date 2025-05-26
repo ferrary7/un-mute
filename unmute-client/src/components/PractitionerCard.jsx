@@ -15,7 +15,8 @@ export default function PractitionerCard({
 }) {
   const [swipeDirection, setSwipeDirection] = useState(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
-  const [isAnimatingOut, setIsAnimatingOut] = useState(false); // Add flag to prevent multiple triggers
+  const [isAnimatingOut, setIsAnimatingOut] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const cardRef = useRef(null);
   
   // Reset card position when practitioner changes
@@ -23,24 +24,57 @@ export default function PractitionerCard({
     setSwipeDirection(null);
     setSwipeOffset(0);
     setIsAnimatingOut(false);
+    setIsVisible(true);
   }, [practitioner]);
 
-  // Configure swipeable handlers with improved settings for smoother swiping
+  // Handle the animation end - make sure card is fully gone before callback
+  const handleTransitionEnd = (e) => {
+    // Only handle the transform transition, not other properties
+    if (e.propertyName !== 'transform') return;
+    
+    if (isAnimatingOut) {
+      // If we're animating out and transition ends, hide card and call callback
+      setIsVisible(false);
+      
+      // Call appropriate callback based on direction
+      if (swipeDirection === "left") {
+        onSwipeLeft();
+      } else if (swipeDirection === "right") {
+        onSwipeRight();
+      }
+    }
+  };
+
+  // Immediately process a swipe action (left/right)
+  const processSwipe = (direction) => {
+    if (isAnimatingOut) return;
+    
+    // First set animation flag to prevent further interactions
+    setIsAnimatingOut(true);
+    setSwipeDirection(direction);
+    
+    // Force a reflow to ensure animation works consistently
+    if (cardRef.current) {
+      void cardRef.current.offsetWidth;
+    }
+    
+    // Set the appropriate offset based on direction
+    if (direction === "left") {
+      setSwipeOffset(-window.innerWidth * 1.5); 
+    } else if (direction === "right") {
+      setSwipeOffset(window.innerWidth * 1.5);
+    }
+  };
+
+  // Configure swipeable handlers
   const swipeHandlers = useSwipeable({
     onSwiping: (eventData) => {
-      // Don't update if we're already animating out
       if (isAnimatingOut) return;
       
-      const { deltaX, velocity } = eventData;
+      const { deltaX } = eventData;
+      setSwipeOffset(deltaX);
       
-      // Apply velocity-based offset for more natural feel
-      // Higher velocity = slightly more movement
-      const velocityFactor = Math.min(Math.abs(velocity) * 0.5, 1.5);
-      const adjustedDeltaX = deltaX * velocityFactor;
-      
-      setSwipeOffset(adjustedDeltaX);
-      
-      if (deltaX > 30) { // Reduced threshold for more responsive direction indication
+      if (deltaX > 30) {
         setSwipeDirection("right");
       } else if (deltaX < -30) {
         setSwipeDirection("left");
@@ -48,97 +82,69 @@ export default function PractitionerCard({
         setSwipeDirection(null);
       }
     },
+    // Note: We're handling all swipe completion in the onSwiped handler now
     onSwipeLeft: (eventData) => {
-      // Don't trigger if already animating
+      // For debugging purposes only - actual handling in onSwiped
       if (isAnimatingOut) return;
-      
-      const { velocity } = eventData;
-      const swipeThreshold = velocity > 0.5 ? 50 : 100; // Lower threshold for fast swipes
-      
-      if (Math.abs(swipeOffset) >= swipeThreshold) {
-        // Set animating flag to prevent multiple triggers
-        setIsAnimatingOut(true);
-        
-        // Animate card off-screen before calling handler
-        setSwipeOffset(-window.innerWidth);
-        
-        // Increase timeout to allow animation to complete
-        setTimeout(() => {
-          onSwipeLeft();
-        }, 300); // Increased from 200ms to 300ms
-      } else {
-        // Reset with animation
-        setSwipeOffset(0);
-        setSwipeDirection(null);
-      }
     },
     onSwipeRight: (eventData) => {
-      // Don't trigger if already animating
+      // For debugging purposes only - actual handling in onSwiped
       if (isAnimatingOut) return;
-      
-      const { velocity } = eventData;
-      const swipeThreshold = velocity > 0.5 ? 50 : 100; // Lower threshold for fast swipes
-      
-      if (Math.abs(swipeOffset) >= swipeThreshold) {
-        // Set animating flag to prevent multiple triggers
-        setIsAnimatingOut(true);
-        
-        // Animate card off-screen before calling handler
-        setSwipeOffset(window.innerWidth);
-        
-        // Increase timeout to allow animation to complete
-        setTimeout(() => {
-          onSwipeRight();
-        }, 300); // Increased from 200ms to 300ms
-      } else {
-        // Reset with animation
-        setSwipeOffset(0);
-        setSwipeDirection(null);
-      }
-    },
-    onTap: () => {
-      // Handle tap if needed
     },
     onSwiped: (eventData) => {
-      // Don't reset if we're animating out
       if (isAnimatingOut) return;
       
-      const { velocity } = eventData;
-      const swipeThreshold = velocity > 0.5 ? 50 : 100; // Lower threshold for fast swipes
+      const { velocity, dir } = eventData;
       
-      // If not swiped enough and not already being animated off-screen
-      if (Math.abs(swipeOffset) < swipeThreshold && Math.abs(swipeOffset) < window.innerWidth / 2) {
-        // Reset with animation
+      // If we didn't swipe far enough for a full swipe action
+      if (Math.abs(swipeOffset) <= 50 && velocity < 0.2) {
         setSwipeOffset(0);
         setSwipeDirection(null);
+      } else {
+        // Process the swipe based on direction
+        if (swipeOffset < 0 || dir === "Left") {
+          processSwipe("left");
+        } else if (swipeOffset > 0 || dir === "Right") {
+          processSwipe("right");
+        }
       }
     },
-    trackMouse: true, // Enable mouse tracking for desktop
-    trackTouch: true, // Ensure touch tracking is enabled
+    trackMouse: true,
+    trackTouch: true,
     preventScrollOnSwipe: true,
-    delta: 5, // Lower delta for more responsive swipe detection
-    swipeDuration: 750, // Longer duration to detect swipes
-    touchEventOptions: { passive: true }, // Performance optimization
+    delta: 5,
   });
 
-  // Calculate styles based on swipe with improved transitions
+  // Handle button actions
+  const handleSwipeLeft = () => processSwipe("left");
+  const handleSwipeRight = () => processSwipe("right");
+
+  // Card style with smooth animations
   const cardStyle = {
     transform: `translateX(${swipeOffset}px) rotate(${swipeOffset * 0.03}deg)`,
-    transition: swipeOffset !== 0 
-      ? 'transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1)' // Smoother during movement (increased from 0.05s)
-      : 'transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)', // Same for return to center
-    willChange: 'transform', // Performance hint for browser
-    touchAction: 'none', // Prevent browser handling of touch events
+    transition: isAnimatingOut 
+      ? 'transform 0.4s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.4s ease' // Separate transitions for better performance
+      : 'transform 0.2s ease',
+    opacity: isAnimatingOut ? '0.7' : '1',
+    position: 'relative',
+    willChange: 'transform, opacity',
+    touchAction: 'pan-y', // Allow vertical scrolling but capture horizontal
+    zIndex: isAnimatingOut ? 0 : 1,
   };
 
   // Background colors based on swipe direction
   const overlayStyle = {
     background: swipeDirection === "right" 
-      ? 'linear-gradient(to right, transparent, rgba(74, 222, 128, 0.2))' 
+      ? 'linear-gradient(to right, transparent, rgba(74, 222, 128, 0.3))' 
       : swipeDirection === "left" 
-        ? 'linear-gradient(to left, transparent, rgba(248, 113, 113, 0.2))' 
+        ? 'linear-gradient(to left, transparent, rgba(248, 113, 113, 0.3))' 
         : 'none',
   };
+  
+  // If the card is no longer visible, don't render it
+  if (!isVisible) {
+    return null;
+  }
 
   return (
     <div className="relative w-full max-w-sm mx-auto">
@@ -160,6 +166,7 @@ export default function PractitionerCard({
         className="w-full shadow-xl overflow-hidden"
         style={cardStyle}
         {...swipeHandlers}
+        onTransitionEnd={handleTransitionEnd}
       >
         {/* Overlay for color effect */}
         <div 
@@ -234,8 +241,33 @@ export default function PractitionerCard({
             View Full Profile
           </div>
           
+          {/* Action Buttons */}
+          <div className="flex justify-center gap-8 pt-3 mt-2">
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSwipeLeft();
+              }}
+              className="p-3 bg-red-100 text-red-500 rounded-full hover:bg-red-200 transition-colors"
+              aria-label="Pass"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSwipeRight();
+              }}
+              className="p-3 bg-green-100 text-green-500 rounded-full hover:bg-green-200 transition-colors"
+              aria-label="Connect"
+            >
+              <Heart className="h-5 w-5" />
+            </button>
+          </div>
+          
           {/* Swipe Instructions */}
-          <div className="flex justify-between text-xs text-muted-foreground pt-1 px-2">
+          <div className="flex justify-between text-xs text-muted-foreground pt-2 px-2">
             <div className="flex items-center">
               <X className="h-3 w-3 mr-1 text-red-400" />
               Swipe left to pass
