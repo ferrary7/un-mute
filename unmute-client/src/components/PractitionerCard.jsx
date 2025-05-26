@@ -15,17 +15,22 @@ export default function PractitionerCard({
 }) {
   const [swipeDirection, setSwipeDirection] = useState(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
+  const [isAnimatingOut, setIsAnimatingOut] = useState(false); // Add flag to prevent multiple triggers
   const cardRef = useRef(null);
   
   // Reset card position when practitioner changes
   useEffect(() => {
     setSwipeDirection(null);
     setSwipeOffset(0);
+    setIsAnimatingOut(false);
   }, [practitioner]);
 
   // Configure swipeable handlers with improved settings for smoother swiping
   const swipeHandlers = useSwipeable({
     onSwiping: (eventData) => {
+      // Don't update if we're already animating out
+      if (isAnimatingOut) return;
+      
       const { deltaX, velocity } = eventData;
       
       // Apply velocity-based offset for more natural feel
@@ -44,15 +49,23 @@ export default function PractitionerCard({
       }
     },
     onSwipeLeft: (eventData) => {
+      // Don't trigger if already animating
+      if (isAnimatingOut) return;
+      
       const { velocity } = eventData;
       const swipeThreshold = velocity > 0.5 ? 50 : 100; // Lower threshold for fast swipes
       
       if (Math.abs(swipeOffset) >= swipeThreshold) {
+        // Set animating flag to prevent multiple triggers
+        setIsAnimatingOut(true);
+        
         // Animate card off-screen before calling handler
         setSwipeOffset(-window.innerWidth);
+        
+        // Increase timeout to allow animation to complete
         setTimeout(() => {
           onSwipeLeft();
-        }, 200);
+        }, 300); // Increased from 200ms to 300ms
       } else {
         // Reset with animation
         setSwipeOffset(0);
@@ -60,15 +73,23 @@ export default function PractitionerCard({
       }
     },
     onSwipeRight: (eventData) => {
+      // Don't trigger if already animating
+      if (isAnimatingOut) return;
+      
       const { velocity } = eventData;
       const swipeThreshold = velocity > 0.5 ? 50 : 100; // Lower threshold for fast swipes
       
       if (Math.abs(swipeOffset) >= swipeThreshold) {
+        // Set animating flag to prevent multiple triggers
+        setIsAnimatingOut(true);
+        
         // Animate card off-screen before calling handler
         setSwipeOffset(window.innerWidth);
+        
+        // Increase timeout to allow animation to complete
         setTimeout(() => {
           onSwipeRight();
-        }, 200);
+        }, 300); // Increased from 200ms to 300ms
       } else {
         // Reset with animation
         setSwipeOffset(0);
@@ -79,7 +100,10 @@ export default function PractitionerCard({
       // Handle tap if needed
     },
     onSwiped: (eventData) => {
-      const { velocity, dir } = eventData;
+      // Don't reset if we're animating out
+      if (isAnimatingOut) return;
+      
+      const { velocity } = eventData;
       const swipeThreshold = velocity > 0.5 ? 50 : 100; // Lower threshold for fast swipes
       
       // If not swiped enough and not already being animated off-screen
@@ -100,7 +124,9 @@ export default function PractitionerCard({
   // Calculate styles based on swipe with improved transitions
   const cardStyle = {
     transform: `translateX(${swipeOffset}px) rotate(${swipeOffset * 0.03}deg)`,
-    transition: swipeOffset !== 0 ? 'transform 0.05s cubic-bezier(0.17, 0.67, 0.83, 0.67)' : 'transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
+    transition: swipeOffset !== 0 
+      ? 'transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1)' // Smoother during movement (increased from 0.05s)
+      : 'transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)', // Same for return to center
     willChange: 'transform', // Performance hint for browser
     touchAction: 'none', // Prevent browser handling of touch events
   };
