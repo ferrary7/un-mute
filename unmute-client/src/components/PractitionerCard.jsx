@@ -241,31 +241,6 @@ export default function PractitionerCard({
             View Full Profile
           </div>
           
-          {/* Action Buttons */}
-          <div className="flex justify-center gap-8 pt-3 mt-2">
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSwipeLeft();
-              }}
-              className="p-3 bg-red-100 text-red-500 rounded-full hover:bg-red-200 transition-colors"
-              aria-label="Pass"
-            >
-              <X className="h-5 w-5" />
-            </button>
-            
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSwipeRight();
-              }}
-              className="p-3 bg-green-100 text-green-500 rounded-full hover:bg-green-200 transition-colors"
-              aria-label="Connect"
-            >
-              <Heart className="h-5 w-5" />
-            </button>
-          </div>
-          
           {/* Swipe Instructions */}
           <div className="flex justify-between text-xs text-muted-foreground pt-2 px-2">
             <div className="flex items-center">
