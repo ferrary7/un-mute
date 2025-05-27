@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Star, MapPin, CheckCircle, Video, Phone, MessageCircle, ArrowLeft } from "lucide-react";
+import { Star, MapPin, CheckCircle, Video, Phone, MessageCircle, ArrowLeft, AlertCircle } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import BookingModal from "@/components/BookingModal";
 
@@ -24,7 +24,8 @@ export default function MatchesListPage() {
       try {
         const savedMatches = localStorage.getItem('savedMatches');
         if (savedMatches) {
-          setMatches(JSON.parse(savedMatches));
+          const parsedMatches = JSON.parse(savedMatches);
+          setMatches(parsedMatches);
         }
       } catch (error) {
         console.error('Error loading matches:', error);
@@ -48,6 +49,12 @@ export default function MatchesListPage() {
 
   const handleBackToMatching = () => {
     window.location.href = '/matches';
+  };
+  
+  // Function to go back to swiping and reset the queue
+  const handleRestartSwiping = () => {
+    // Redirect to matches page with a query param to indicate restart
+    window.location.href = '/matches?restart=true';
   };
 
   if (isLoading) {
@@ -75,18 +82,29 @@ export default function MatchesListPage() {
       
       <div className="container mx-auto px-4 py-8">
         {/* Header with back button */}
-        <div className="flex items-center mb-6">
-          <button 
-            onClick={handleBackToMatching}
-            className="mr-4 p-2 rounded-full hover:bg-muted/50 transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold">Your Matches</h1>
-            <p className="text-muted-foreground">You've matched with {matches.length} practitioners</p>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <button 
+              onClick={handleBackToMatching}
+              className="mr-4 p-2 rounded-full hover:bg-muted/50 transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold">Your Matches</h1>
+              <p className="text-muted-foreground">You&apos;ve matched with {matches.length} practitioners</p>
+            </div>
           </div>
+          <Button 
+            variant="outline" 
+            onClick={handleRestartSwiping}
+            className="flex items-center gap-2"
+          >
+            Keep Exploring
+          </Button>
         </div>
+
+        {/* Message notification removed */}
         
         {matches.length === 0 ? (
           <div className="text-center py-20">
@@ -99,92 +117,101 @@ export default function MatchesListPage() {
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {matches.map((practitioner) => (
-              <Card key={practitioner.id} className="hover:shadow-lg transition-shadow overflow-hidden">
-                <CardHeader className="text-center pb-3">
-                  <Avatar className="w-20 h-20 mx-auto mb-3">
-                    <AvatarImage src={practitioner.image} alt={practitioner.name} />
-                    <AvatarFallback>
-                      {practitioner.name.split(" ").map(n => n[0]).join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <CardTitle className="text-xl">{practitioner.name}</CardTitle>
-                  <div className="flex items-center justify-center space-x-1 mb-2">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span className="text-sm font-medium">{practitioner.rating}</span>
-                    <span className="text-sm text-muted-foreground">({practitioner.reviewCount})</span>
-                  </div>
-                  <div className="flex items-center justify-center text-sm text-muted-foreground">
-                    <MapPin className="h-3 w-3 mr-1" />
-                    <span>{practitioner.location}</span>
-                    <span className="mx-1">•</span>
-                    <span>{practitioner.experience} exp</span>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="pt-0">
-                  <div className="mb-4">
-                    <h3 className="text-sm font-medium mb-2">Specializations</h3>
-                    <div className="flex flex-wrap gap-1">
-                      {practitioner.specializations.slice(0, 3).map((spec) => (
-                        <Badge key={spec} variant="secondary" className="text-xs">
-                          {spec}
-                        </Badge>
-                      ))}
-                      {practitioner.specializations.length > 3 && (
-                        <span className="text-xs text-muted-foreground">+{practitioner.specializations.length - 3} more</span>
-                      )}
+            {matches.map((practitioner) => {              
+              return (
+                <Card 
+                  key={practitioner.id} 
+                  className="hover:shadow-lg transition-shadow overflow-hidden relative"
+                >
+                  <CardHeader className="text-center pb-3">
+                    <Avatar className="w-20 h-20 mx-auto mb-3">
+                      <AvatarImage src={practitioner.image} alt={practitioner.name} />
+                      <AvatarFallback>
+                        {practitioner.name.split(" ").map(n => n[0]).join("")}
+                      </AvatarFallback>
+                    </Avatar>
+                    <CardTitle className="text-xl">{practitioner.name}</CardTitle>
+                    <div className="flex items-center justify-center space-x-1 mb-2">
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <span className="text-sm font-medium">{practitioner.rating}</span>
+                      <span className="text-sm text-muted-foreground">({practitioner.reviewCount})</span>
                     </div>
-                  </div>
+                    <div className="flex items-center justify-center text-sm text-muted-foreground">
+                      <MapPin className="h-3 w-3 mr-1" />
+                      <span>{practitioner.location}</span>
+                      <span className="mx-1">•</span>
+                      <span>{practitioner.experience} exp</span>
+                    </div>
+                  </CardHeader>
                   
-                  <div className="mb-4">
-                    <h3 className="text-sm font-medium mb-2">Session Types</h3>
-                    <div className="flex space-x-3">
-                      {practitioner.sessionTypes.includes("video") && (
-                        <div className="flex items-center space-x-1 text-xs">
-                          <Video className="h-3 w-3" />
-                          <span>Video</span>
-                        </div>
-                      )}
-                      {practitioner.sessionTypes.includes("audio") && (
-                        <div className="flex items-center space-x-1 text-xs">
-                          <Phone className="h-3 w-3" />
-                          <span>Audio</span>
-                        </div>
-                      )}
-                      {practitioner.sessionTypes.includes("text") && (
-                        <div className="flex items-center space-x-1 text-xs">
-                          <MessageCircle className="h-3 w-3" />
-                          <span>Text</span>
-                        </div>
-                      )}
+                  <CardContent className="pt-0">
+                    <div className="mb-4">
+                      <h3 className="text-sm font-medium mb-2">Specializations</h3>
+                      <div className="flex flex-wrap gap-1">
+                        {practitioner.specializations.slice(0, 3).map((spec) => (
+                          <Badge 
+                            key={spec} 
+                            variant="secondary" 
+                            className="text-xs"
+                          >
+                            {spec}
+                          </Badge>
+                        ))}
+                        {practitioner.specializations.length > 3 && (
+                          <span className="text-xs text-muted-foreground">+{practitioner.specializations.length - 3} more</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="text-sm font-medium">Session Fee</h3>
-                      <p className="text-primary font-bold">{practitioner.price}</p>
+                    
+                    <div className="mb-4">
+                      <h3 className="text-sm font-medium mb-2">Session Types</h3>
+                      <div className="flex space-x-3">
+                        {practitioner.sessionTypes.includes("video") && (
+                          <div className="flex items-center space-x-1 text-xs">
+                            <Video className="h-3 w-3" />
+                            <span>Video</span>
+                          </div>
+                        )}
+                        {practitioner.sessionTypes.includes("audio") && (
+                          <div className="flex items-center space-x-1 text-xs">
+                            <Phone className="h-3 w-3" />
+                            <span>Audio</span>
+                          </div>
+                        )}
+                        {practitioner.sessionTypes.includes("text") && (
+                          <div className="flex items-center space-x-1 text-xs">
+                            <MessageCircle className="h-3 w-3" />
+                            <span>Text</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewProfile(practitioner)}
-                      >
-                        Profile
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleBookSession(practitioner)}
-                      >
-                        Book
-                      </Button>
+                    
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="text-sm font-medium">Session Fee</h3>
+                        <p className="font-bold text-primary">{practitioner.price}</p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewProfile(practitioner)}
+                        >
+                          Profile
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleBookSession(practitioner)}
+                        >
+                          Book
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
@@ -250,7 +277,7 @@ export default function MatchesListPage() {
               {/* Approach */}
               <div>
                 <h3 className="font-semibold mb-2">My Approach</h3>
-                <p className="text-muted-foreground italic">"{selectedPractitioner.approach}"</p>
+                <p className="text-muted-foreground italic">&quot;{selectedPractitioner.approach}&quot;</p>
               </div>
               
               {/* Languages */}

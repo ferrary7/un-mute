@@ -278,7 +278,7 @@ export default function AppointmentsPage() {
                   <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <CardTitle className="mb-2">No Upcoming Appointments</CardTitle>
                   <CardDescription className="mb-4">
-                    You don't have any upcoming sessions scheduled.
+                    You don&apos;t have any upcoming sessions scheduled.
                   </CardDescription>
                   <Button onClick={handleBookNew}>
                     <Plus className="h-4 w-4 mr-2" />
@@ -340,7 +340,7 @@ export default function AppointmentsPage() {
                     {appointment.notes && (
                       <div className="bg-muted/30 p-3 rounded-lg mb-4">
                         <p className="text-sm text-muted-foreground italic">
-                          "{appointment.notes}"
+                          &quot;{appointment.notes}&quot;
                         </p>
                       </div>
                     )}

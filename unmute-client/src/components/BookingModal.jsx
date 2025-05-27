@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Clock, Video, Phone, MessageCircle, CreditCard, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { 
+  getMessagedPractitionerId, 
+  getQuizParameters, 
+  saveQuizParameters,
+  setBookedSession
+} from "@/utils/swipeLimit";
 
 export default function BookingModal({ practitioner, isOpen, onClose }) {
   const [selectedDate, setSelectedDate] = useState(null);
@@ -15,8 +21,22 @@ export default function BookingModal({ practitioner, isOpen, onClose }) {
   const [selectedSessionType, setSelectedSessionType] = useState(null);
   const [isBooking, setIsBooking] = useState(false);
   const [bookingComplete, setBookingComplete] = useState(false);
+  const [isAllowedToBook, setIsAllowedToBook] = useState(true);
+  const [quizParameters, setQuizParameters] = useState(null);
   
   const router = useRouter();
+
+  // Load quiz parameters from localStorage
+  useEffect(() => {
+    // Always allow booking
+    setIsAllowedToBook(true);
+    
+    // Load quiz parameters from localStorage
+    const parameters = getQuizParameters();
+    if (parameters) {
+      setQuizParameters(parameters);
+    }
+  }, [practitioner]);
 
   // Mock available dates (next 7 days)
   const availableDates = [];
@@ -63,57 +83,138 @@ export default function BookingModal({ practitioner, isOpen, onClose }) {
     }
   ];
 
-  const handleBooking = async () => {
+  // Handle session booking
+  const handleBookSession = () => {
+    // Check booking permission again as a safeguard
+    const messagedId = getMessagedPractitionerId();
+    if (messagedId && messagedId !== practitioner.id.toString()) {
+      alert("You can only book sessions with the practitioner who has contacted you.");
+      onClose();
+      return;
+    }
+    
+    // Gather booking data, including quiz parameters
+    const bookingData = {
+      practitioner: {
+        id: practitioner.id,
+        name: practitioner.name,
+      },
+      session: {
+        date: selectedDate,
+        time: selectedTime,
+        type: selectedSessionType
+      },
+      quizParameters: quizParameters || {}
+    };
+
     if (!selectedDate || !selectedTime || !selectedSessionType) {
+      alert("Please select a date, time, and session type.");
       return;
     }
 
     setIsBooking(true);
-    
-    try {
-      // Mock booking API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const bookingData = {
-        practitioner: practitioner,
+
+    // Simulate booking process
+    setTimeout(() => {
+      // Create appointment object that matches the expected format
+      const appointment = {
+        practitioner: {
+          id: practitioner.id,
+          name: practitioner.name,
+          image: practitioner.image,
+          specializations: practitioner.specializations,
+          rating: practitioner.rating,
+          location: practitioner.location
+        },
         date: selectedDate,
         time: selectedTime,
         sessionType: selectedSessionType,
-        bookingId: `BK${Date.now()}`,
-        status: "confirmed"
+        bookingId: "BK" + Date.now(), // Generate unique booking ID
+        status: "confirmed",
+        duration: "50 minutes",
+        notes: null
       };
       
-      // Save to localStorage (in real app, save to backend)
-      const existingBookings = JSON.parse(localStorage.getItem("appointments") || "[]");
-      existingBookings.push(bookingData);
-      localStorage.setItem("appointments", JSON.stringify(existingBookings));
+      // Get existing appointments and add the new one
+      const existingAppointments = JSON.parse(localStorage.getItem("appointments") || "[]");
+      const updatedAppointments = [...existingAppointments, appointment];
       
-      console.log("Booking successful:", bookingData);
-      setBookingComplete(true);
-    } catch (error) {
-      console.error("Booking failed:", error);
-    } finally {
+      // Save updated appointments list
+      localStorage.setItem("appointments", JSON.stringify(updatedAppointments));
+      
+      // Also save booking data for any other purposes
+      const bookingData = {
+        practitioner: {
+          id: practitioner.id,
+          name: practitioner.name,
+        },
+        session: {
+          date: selectedDate,
+          time: selectedTime,
+          type: selectedSessionType
+        },
+        quizParameters: quizParameters || {}
+      };
+      localStorage.setItem('bookingData', JSON.stringify(bookingData));
+      
+      // Mark session as booked in the app state
+      setBookedSession(true);
+      
       setIsBooking(false);
-    }
+      setBookingComplete(true);
+    }, 1500);
   };
-
+  
+  // Handle viewing appointments
+  const handleViewAppointments = () => {
+    router.push('/appointments');
+  };
+  
+  // Handle closing the modal after booking
   const handleClose = () => {
-    setSelectedDate(null);
-    setSelectedTime(null);
-    setSelectedSessionType(null);
-    setBookingComplete(false);
     onClose();
   };
 
-  const handleViewAppointments = () => {
-    handleClose();
-    router.push("/appointments");
-  };
+  // After successful booking, redirect to appointments
+  useEffect(() => {
+    if (bookingComplete) {
+      const timer = setTimeout(() => {
+        onClose();
+        router.push("/appointments");
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [bookingComplete, onClose, router]);
+
+  // If another practitioner has messaged, show a message and don't allow booking
+  if (!isAllowedToBook) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Booking Not Available</DialogTitle>
+            <DialogDescription>
+              Another practitioner has already contacted you. You can only book sessions with that practitioner.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end mt-4">
+            <Button 
+              variant="outline" 
+              onClick={onClose}
+            >
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   if (!practitioner) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         {!bookingComplete ? (
           <>
@@ -244,13 +345,13 @@ export default function BookingModal({ practitioner, isOpen, onClose }) {
                 <Button 
                   variant="outline" 
                   className="flex-1"
-                  onClick={handleClose}
+                  onClick={onClose}
                 >
                   Cancel
                 </Button>
                 <Button 
                   className="flex-1"
-                  onClick={handleBooking}
+                  onClick={handleBookSession}
                   disabled={!selectedDate || !selectedTime || !selectedSessionType || isBooking}
                 >
                   {isBooking ? (
