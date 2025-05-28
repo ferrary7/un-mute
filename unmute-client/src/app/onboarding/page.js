@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import { ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
 
 export default function OnboardingPage() {
@@ -17,8 +18,10 @@ export default function OnboardingPage() {
     {
       id: "concerns",
       title: "What brings you here today?",
-      description: "Select all that apply to help us find the right practitioner for you",
+      description: "Share what's on your mind and select the areas you'd like support with",
       type: "multiple",
+      hasTextInput: true,
+      textInputPlaceholder: "Tell us what's going on in your own words...",
       options: [
         { id: "stress", label: "Stress & Anxiety", emoji: "😰" },
         { id: "confidence", label: "Self-Confidence", emoji: "💪" },
@@ -33,8 +36,8 @@ export default function OnboardingPage() {
     },
     {
       id: "language",
-      title: "What's your preferred language?",
-      description: "Choose the language you're most comfortable speaking in",
+      title: "What&apos;s your preferred language?",
+      description: "Choose the language you&apos;re most comfortable speaking in",
       type: "single",
       options: [
         { id: "english", label: "English", emoji: "🇺🇸" },
@@ -61,7 +64,7 @@ export default function OnboardingPage() {
     },
     {
       id: "ageGroup",
-      title: "What's your age group?",
+      title: "What&apos;s your age group?",
       description: "This helps us match you with practitioners who specialize in your age demographic",
       type: "single",
       options: [
@@ -122,12 +125,27 @@ export default function OnboardingPage() {
     }
   };
 
+  const handleTextInput = (value) => {
+    const question = currentQuestion;
+    const textKey = `${question.id}_text`;
+    
+    setAnswers(prev => ({
+      ...prev,
+      [textKey]: value
+    }));
+  };
+
   const isAnswered = () => {
     const answer = answers[currentQuestion.id];
     if (currentQuestion.type === "multiple") {
       return answer && answer.length > 0;
     }
     return answer !== undefined;
+  };
+
+  const hasTextInput = () => {
+    const textKey = `${currentQuestion.id}_text`;
+    return answers[textKey] && answers[textKey].trim().length > 0;
   };
 
   const handleNext = () => {
@@ -173,7 +191,7 @@ export default function OnboardingPage() {
           </Badge>
           <Progress value={progress} className="mb-4" />
           <h1 className="text-2xl md:text-3xl font-bold mb-2">
-            Let's personalize your experience
+            Let&apos;s personalize your experience
           </h1>
           <p className="text-muted-foreground">
             This helps us find the perfect mental wellness practitioner for you
@@ -191,6 +209,60 @@ export default function OnboardingPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Text Input integrated as first option for concerns question */}
+            {currentQuestion.hasTextInput && (
+              <div className="mb-4">
+                <Card
+                  className={`transition-all hover:shadow-md ${
+                    hasTextInput()
+                      ? "border-primary bg-primary/5 shadow-md"
+                      : "border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10 hover:border-primary/50"
+                  }`}
+                >
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-2xl">✍️</span>
+                        <div className="flex-1">
+                          <div className="font-medium text-primary">Tell us your story</div>
+                          <div className="text-sm text-muted-foreground">
+                            Describe what&apos;s happening in your own words
+                          </div>
+                        </div>
+                        {hasTextInput() && (
+                          <CheckCircle className="h-5 w-5 text-primary" />
+                        )}
+                      </div>
+                      <Input
+                        placeholder={currentQuestion.textInputPlaceholder}
+                        value={answers[`${currentQuestion.id}_text`] || ""}
+                        onChange={(e) => handleTextInput(e.target.value)}
+                        className="text-base placeholder:text-muted-foreground/60"
+                        maxLength={150}
+                      />
+                      <div className="flex justify-between items-center text-xs text-muted-foreground">
+                        <span>This helps us find the perfect match for you</span>
+                        <span>{(answers[`${currentQuestion.id}_text`] || "").length}/150</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Subtle divider for concerns question */}
+            {currentQuestion.hasTextInput && (
+              <div className="mb-4 flex items-center">
+                <div className="flex-1 border-t border-muted-foreground/20"></div>
+                <div className="px-3">
+                  <span className="text-xs text-muted-foreground/60">
+                    Select what applies to you
+                  </span>
+                </div>
+                <div className="flex-1 border-t border-muted-foreground/20"></div>
+              </div>
+            )}
+
             <div className="grid gap-3">
               {currentQuestion.options.map((option) => (
                 <Card
