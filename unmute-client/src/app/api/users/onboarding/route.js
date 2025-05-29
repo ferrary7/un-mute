@@ -12,7 +12,8 @@ export async function POST(request) {
     if (!session?.user?.id) {
       console.log('Unauthorized: No valid session or user ID');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }    const data = await request.json();
+    }   
+     const data = await request.json();
     console.log('Onboarding data received:', JSON.stringify(data));
     console.log('Session user ID:', session.user.id);
     

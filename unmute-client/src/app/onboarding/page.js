@@ -16,6 +16,7 @@ export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
   // Redirect if not authenticated
   if (status === "loading") {
@@ -85,8 +86,7 @@ export default function OnboardingPage() {
         { id: "25-34", label: "25-34 years", emoji: "💼" },
         { id: "35-44", label: "35-44 years", emoji: "🏠" },
         { id: "45-54", label: "45-54 years", emoji: "👔" },
-        { id: "55-64", label: "55-64 years", emoji: "🌅" },
-        { id: "65+", label: "65+ years", emoji: "🌺" }
+        { id: "55+", label: "55+ years", emoji: "🌺" } // Changed from "55-64" to "55+" to match schema
       ]
     },
     {
@@ -204,7 +204,7 @@ export default function OnboardingPage() {
           sessionType: mapSessionType(answers.sessionType),
           practitionerGender: mapGender(answers.practitionerGender),
           language: answers.language ? answers.language.charAt(0).toUpperCase() + answers.language.slice(1) : 'English',
-          ageGroup: answers.ageGroup || '25-34',
+          ageGroup: answers.ageGroup || '25-34', // Ensuring this matches the schema enum values
           experience: answers.experience || 'First time'
         },
         quizParameters: answers
@@ -219,6 +219,7 @@ export default function OnboardingPage() {
         body: JSON.stringify(onboardingData),
       });      if (response.ok) {
         console.log("Onboarding completed successfully");
+        setError(null);
         router.push("/matches");
       } else {
         const errorData = await response.json();
@@ -226,14 +227,14 @@ export default function OnboardingPage() {
         
         if (errorData.details) {
           console.error("Validation errors:", errorData.details);
+          setError(`Validation error: ${errorData.details.map(d => d.message).join(', ')}`);
+        } else {
+          setError(errorData.error || "Failed to complete onboarding");
         }
-        
-        // TODO: You could add a toast notification or error message UI here
-        // For now, we're just logging to console
       }
     } catch (error) {
       console.error("Error completing onboarding:", error);
-      // You might want to show an error message to the user
+      setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -380,14 +381,21 @@ export default function OnboardingPage() {
           
           <Button
             onClick={handleNext}
-            disabled={!isAnswered()}
+            disabled={!isAnswered() || isSubmitting}
           >
-            {currentStep === questions.length - 1 ? "Complete" : "Next"}
+            {currentStep === questions.length - 1 ? (isSubmitting ? "Saving..." : "Complete") : "Next"}
             {currentStep !== questions.length - 1 && (
               <ArrowRight className="ml-2 h-4 w-4" />
             )}
           </Button>
         </div>
+
+        {/* Error display */}
+        {error && (
+          <div className="mt-4 p-3 bg-destructive/10 border border-destructive rounded-md text-destructive text-sm">
+            {error}
+          </div>
+        )}
       </div>
     </div>
   );
