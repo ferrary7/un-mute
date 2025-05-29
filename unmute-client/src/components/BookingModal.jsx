@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 // Import API utility functions
 import { 
   getMessagedPractitionerId, 
-  getQuizParameters
+  getonboardingParameters
 } from "@/utils/dbUtils";
 
 export default function BookingModal({ practitioner, isOpen, onClose }) {
@@ -21,28 +21,28 @@ export default function BookingModal({ practitioner, isOpen, onClose }) {
   const [isBooking, setIsBooking] = useState(false);
   const [bookingComplete, setBookingComplete] = useState(false);
   const [isAllowedToBook, setIsAllowedToBook] = useState(true);
-  const [quizParameters, setQuizParameters] = useState(null);
+  const [onboardingParameters, setonboardingParameters] = useState(null);
   
   const router = useRouter();
 
-  // Load quiz parameters from API/user profile
+  // Load onboarding parameters from API/user profile
   useEffect(() => {
     // Always allow booking
     setIsAllowedToBook(true);
     
-    // Load quiz parameters from API
-    const fetchQuizParameters = async () => {
+    // Load onboarding parameters from API
+    const fetchonboardingParameters = async () => {
       try {
-        const parameters = await getQuizParameters();
+        const parameters = await getonboardingParameters();
         if (parameters) {
-          setQuizParameters(parameters);
+          setonboardingParameters(parameters);
         }
       } catch (error) {
-        console.error("Error fetching quiz parameters:", error);
+        console.error("Error fetching onboarding parameters:", error);
       }
     };
     
-    fetchQuizParameters();
+    fetchonboardingParameters();
   }, [practitioner]);
 
   // Mock available dates (next 7 days)
@@ -109,7 +109,7 @@ export default function BookingModal({ practitioner, isOpen, onClose }) {
         status: "confirmed",
         duration: "50 minutes",
         notes: null,
-        quizParameters: quizParameters || {}
+        onboardingParameters: onboardingParameters || {}
       };
       
       // Save appointment to the database

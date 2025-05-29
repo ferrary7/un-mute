@@ -69,7 +69,7 @@ export async function POST(request) {
       status: data.status || "confirmed",
       duration: data.duration || "50 minutes",
       notes: data.notes,
-      quizParameters: data.quizParameters || {}
+      onboardingParameters: data.onboardingParameters || {}
     });
     
     await appointment.save();

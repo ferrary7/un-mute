@@ -1,32 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
+import { useOnboarding } from "@/context/OnboardingContext";
+import AuthDialog from "@/components/AuthDialog";
+import { useSession } from "next-auth/react";
 
 export default function OnboardingPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const { storeOnboardingData, onboardingData } = useOnboarding();
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
-
-  // Redirect if not authenticated
-  if (status === "loading") {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
-  }
-
-  if (!session) {
-    router.push("/");
-    return null;
-  }
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  
+  // If user is logged in and has completed onboarding, redirect to matches
+  useEffect(() => {
+    if (status === 'authenticated') {
+      // Check if user has completed onboarding
+      fetch('/api/users/profile')
+        .then(res => res.json())
+        .then(data => {
+          if (data?.user?.onboardingCompleted) {
+            console.log('User has already completed onboarding, redirecting to matches');
+            router.push('/matches');
+          }
+        })
+        .catch(err => {
+          console.error('Error checking profile:', err);
+        });
+    }
+  }, [status, router]);
   
   const questions = [
     {
@@ -50,8 +62,8 @@ export default function OnboardingPage() {
     },
     {
       id: "language",
-      title: "What&apos;s your preferred language?",
-      description: "Choose the language you&apos;re most comfortable speaking in",
+      title: "What's your preferred language?",
+      description: "Choose the language you're most comfortable speaking in",
       type: "single",
       options: [
         { id: "english", label: "English", emoji: "🇺🇸" },
@@ -78,7 +90,7 @@ export default function OnboardingPage() {
     },
     {
       id: "ageGroup",
-      title: "What&apos;s your age group?",
+      title: "What's your age group?",
       description: "This helps us match you with practitioners who specialize in your age demographic",
       type: "single",
       options: [
@@ -86,7 +98,7 @@ export default function OnboardingPage() {
         { id: "25-34", label: "25-34 years", emoji: "💼" },
         { id: "35-44", label: "35-44 years", emoji: "🏠" },
         { id: "45-54", label: "45-54 years", emoji: "👔" },
-        { id: "55+", label: "55+ years", emoji: "🌺" } // Changed from "55-64" to "55+" to match schema
+        { id: "55+", label: "55+ years", emoji: "🌺" }
       ]
     },
     {
@@ -173,7 +185,9 @@ export default function OnboardingPage() {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
-  };  const handleComplete = async () => {
+  };
+
+  const handleComplete = async () => {
     setIsSubmitting(true);
     
     try {
@@ -198,39 +212,41 @@ export default function OnboardingPage() {
       };
       
       // Transform answers to the format expected by the User model
-      const onboardingData = {
+      const formattedData = {
         preferences: {
           concerns: Array.isArray(answers.concerns) ? answers.concerns : [],
           sessionType: mapSessionType(answers.sessionType),
           practitionerGender: mapGender(answers.practitionerGender),
           language: answers.language ? answers.language.charAt(0).toUpperCase() + answers.language.slice(1) : 'English',
-          ageGroup: answers.ageGroup || '25-34', // Ensuring this matches the schema enum values
+          ageGroup: answers.ageGroup || '25-34',
           experience: answers.experience || 'First time'
         },
-        quizParameters: answers
+        onboardingParameters: answers
       };
 
-      // Save to database via API
-      const response = await fetch('/api/users/onboarding', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(onboardingData),
-      });      if (response.ok) {
-        console.log("Onboarding completed successfully");
-        setError(null);
-        router.push("/matches");
-      } else {
-        const errorData = await response.json();
-        console.error("Failed to complete onboarding:", errorData);
+      console.log("onboarding complete: Storing formatted onboarding data", formattedData);
+      storeOnboardingData(formattedData);
+      
+      // If already logged in, try to save immediately
+      if (status === 'authenticated' && session?.user?.id) {
+        const response = await fetch('/api/users/onboarding', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formattedData),
+        });
         
-        if (errorData.details) {
-          console.error("Validation errors:", errorData.details);
-          setError(`Validation error: ${errorData.details.map(d => d.message).join(', ')}`);
+        if (response.ok) {
+          console.log("onboarding data saved successfully for logged-in user");
+          router.push('/matches');
         } else {
-          setError(errorData.error || "Failed to complete onboarding");
+          const errorData = await response.json();
+          setError(errorData.error || 'Failed to save your preferences');
         }
+      } else {
+        // Not logged in, show auth dialog
+        setShowAuthDialog(true);
       }
     } catch (error) {
       console.error("Error completing onboarding:", error);
@@ -238,6 +254,11 @@ export default function OnboardingPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Called after successful authentication - the OnboardingContext will handle saving
+  const handleAuthSuccess = () => {
+    console.log("Auth successful - OnboardingContext will handle saving and redirect");
   };
 
   const isSelected = (optionId) => {
@@ -258,7 +279,7 @@ export default function OnboardingPage() {
           </Badge>
           <Progress value={progress} className="mb-4" />
           <h1 className="text-2xl md:text-3xl font-bold mb-2">
-            Let&apos;s personalize your experience
+            Let's personalize your experience
           </h1>
           <p className="text-muted-foreground">
             This helps us find the perfect mental wellness practitioner for you
@@ -276,7 +297,6 @@ export default function OnboardingPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-
             {/* Subtle divider for concerns question */}
             {currentQuestion.hasTextInput && (
               <div className="mb-4 flex items-center">
@@ -338,7 +358,7 @@ export default function OnboardingPage() {
                         <div className="flex-1">
                           <div className="font-medium text-primary">Tell us your story</div>
                           <div className="text-sm text-muted-foreground">
-                            Describe what&apos;s happening in your own words
+                            Describe what's happening in your own words
                           </div>
                         </div>
                         {hasTextInput() && (
@@ -397,6 +417,14 @@ export default function OnboardingPage() {
           </div>
         )}
       </div>
+      
+      {/* Auth Dialog shown after onboarding completion */}
+      <AuthDialog 
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+        onSuccess={handleAuthSuccess}
+        defaultView="signup"
+      />
     </div>
   );
 }

@@ -75,7 +75,7 @@ export async function PATCH(request) {
     // Allow updates only to specific fields (restricting direct password/email changes)
     const allowedUpdates = [
       'name', 'phone', 'location', 'bio', 'image', 'preferences',
-      'quizParameters', 'midScreenPromptShown', 'shownPractitioners'
+      'onboardingParameters', 'midScreenPromptShown', 'shownPractitioners'
     ];
     
     // Filter out any disallowed updates

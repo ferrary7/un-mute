@@ -18,14 +18,17 @@ import { Eye, EyeOff, Mail, Lock, User, Chrome } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function AuthDialog({ 
+  open, 
+  onOpenChange,
   triggerText, 
   variant = "default", 
   size = "default", 
   isSignUp = false,
-  className = ""
+  className = "",
+  onSuccess = null,
+  defaultView = "login"
 }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isSignUpMode, setIsSignUpMode] = useState(isSignUp);
+  const [isSignUpMode, setIsSignUpMode] = useState(isSignUp || defaultView === "signup");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -87,80 +90,84 @@ export default function AuthDialog({
           email: formData.email,
           password: formData.password,
           name: formData.name,
-          redirect: false,
+          redirect: false
         });
         
         if (result?.error) {
           setErrors({ submit: result.error });
+          setIsLoading(false);
           return;
         }
         
-        // After successful registration, redirect to onboarding
-        router.push("/onboarding");
+        // Close the dialog first
+        if (onOpenChange) {
+          onOpenChange(false);
+        }
+        
+        // Call success callback if provided - context will handle the rest
+        if (onSuccess) {
+          console.log("Sign-up successful, calling onSuccess callback");
+          onSuccess();
+        }
       } else {
         // Login with NextAuth credentials provider
         const result = await signIn('credentials', {
           email: formData.email,
           password: formData.password,
-          redirect: false,
+          redirect: false
         });
         
         if (result?.error) {
           setErrors({ submit: "Invalid email or password" });
+          setIsLoading(false);
           return;
         }
         
-        // Check if user has completed onboarding by calling API
-        const response = await fetch('/api/users/profile');
-        if (response.ok) {
-          const { user } = await response.json();
-          if (user.onboardingCompleted) {
-            router.push("/matches");
-          } else {
-            router.push("/onboarding");
-          }
-        } else {
-          router.push("/onboarding");
+        // Close the dialog first
+        if (onOpenChange) {
+          onOpenChange(false);
+        }
+        
+        // Call success callback if provided - context will handle the rest
+        if (onSuccess) {
+          console.log("Login successful, calling onSuccess callback");
+          onSuccess();
         }
       }
       
-      setIsOpen(false);
       setFormData({ name: "", email: "", password: "", confirmPassword: "" });
     } catch (error) {
       console.error("Auth error:", error);
       setErrors({ submit: "Something went wrong. Please try again." });
-    } finally {
       setIsLoading(false);
     }
   };
+  
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
+      // Simple sign in without redirect
       const result = await signIn('google', { redirect: false });
       
       if (result?.error) {
         setErrors({ submit: "Google sign in failed. Please try again." });
+        setIsLoading(false);
         return;
       }
       
-      // Check if user has completed onboarding
-      const response = await fetch('/api/users/profile');
-      if (response.ok) {
-        const { user } = await response.json();
-        if (user.onboardingCompleted) {
-          router.push("/matches");
-        } else {
-          router.push("/onboarding");
-        }
-      } else {
-        router.push("/onboarding");
+      // Close the dialog first
+      if (onOpenChange) {
+        onOpenChange(false);
       }
       
-      setIsOpen(false);
+      // Call success callback if provided - context will handle the rest
+      if (onSuccess) {
+        console.log("Google sign-in successful, calling onSuccess callback");
+        onSuccess();
+      }
     } catch (error) {
       console.error("Google sign in error:", error);
       setErrors({ submit: "Google sign in failed. Please try again." });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -172,12 +179,14 @@ export default function AuthDialog({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant={variant} size={size} className={className}>
-          {triggerText}
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {triggerText && (
+        <DialogTrigger asChild>
+          <Button variant={variant} size={size} className={className}>
+            {triggerText}
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>

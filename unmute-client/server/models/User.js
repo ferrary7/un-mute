@@ -106,13 +106,9 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  quizParameters: {
+  onboardingParameters: {
     type: mongoose.Schema.Types.Mixed,
     default: {}
-  },
-  quizParameters: {
-    type: mongoose.Schema.Types.Mixed,
-    default: null
   }
 }, {
   timestamps: true

@@ -125,34 +125,34 @@ export const hasBookedSession = async () => {
   }
 };
 
-// Quiz parameters - save to user profile
-export const saveQuizParameters = async (parameters) => {
+// onboarding parameters - save to user profile
+export const saveonboardingParameters = async (parameters) => {
   try {
     const response = await fetch('/api/users/profile', {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ quizParameters: parameters }),
+      body: JSON.stringify({ onboardingParameters: parameters }),
     });
     return response.ok;
   } catch (error) {
-    console.error('Error saving quiz parameters:', error);
+    console.error('Error saving onboarding parameters:', error);
     return false;
   }
 };
 
-// Get quiz parameters from user profile
-export const getQuizParameters = async () => {
+// Get onboarding parameters from user profile
+export const getonboardingParameters = async () => {
   try {
     const response = await fetch('/api/users/profile');
     if (!response.ok) {
       throw new Error('Failed to fetch user profile');
     }
     const data = await response.json();
-    return data.user.quizParameters;
+    return data.user.onboardingParameters;
   } catch (error) {
-    console.error('Error getting quiz parameters:', error);
+    console.error('Error getting onboarding parameters:', error);
     return null;
   }
 };

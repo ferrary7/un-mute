@@ -44,7 +44,10 @@ export default function Navbar() {
             {user ? (
               <>
                 <Link href="/matches" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Matches
+                  Find Listeners
+                </Link>
+                <Link href="/matches/list" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Your Matches
                 </Link>
                 <Link href="/appointments" className="text-muted-foreground hover:text-foreground transition-colors">
                   Appointments

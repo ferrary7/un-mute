@@ -42,7 +42,7 @@ const AppointmentSchema = new mongoose.Schema({
     type: String,
     default: null
   },
-  quizParameters: {
+  onboardingParameters: {
     type: mongoose.Schema.Types.Mixed,
     default: null
   },

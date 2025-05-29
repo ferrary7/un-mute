@@ -12,31 +12,37 @@ export async function POST(request) {
     if (!session?.user?.id) {
       console.log('Unauthorized: No valid session or user ID');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }   
-     const data = await request.json();
+    }
+    
+    const data = await request.json();
     console.log('Onboarding data received:', JSON.stringify(data));
     console.log('Session user ID:', session.user.id);
     
     await connectDB();
     
+    // Explicitly set onboardingCompleted to true to ensure it's updated
+    const updateData = {
+      ...data,
+      onboardingCompleted: true
+    };
+    
+    console.log('Update data being sent to DB:', JSON.stringify(updateData));
+    
     const user = await User.findByIdAndUpdate(
       session.user.id,
-      { 
-        $set: {
-          ...data,
-          onboardingCompleted: true
-        }
-      },
+      { $set: updateData },
       { new: true, runValidators: true }
     ).select('-hashedPassword');
     
     console.log('Updated user:', user ? 'Success' : 'Not found');
+    console.log('Onboarding completed flag:', user?.onboardingCompleted);
     
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ user, message: 'Onboarding completed successfully' });  } catch (error) {
+    return NextResponse.json({ user, message: 'Onboarding completed successfully' });
+  } catch (error) {
     console.error('Onboarding completion error:', error);
     
     // Provide more specific error message to client if it's a validation error

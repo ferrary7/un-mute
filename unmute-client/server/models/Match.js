@@ -16,7 +16,7 @@ const MatchSchema = new mongoose.Schema({
     enum: ['liked', 'shortlisted', 'passed'],
     required: true
   },
-  quizScore: {
+  onboardingScore: {
     type: Number,
     min: 0,
     max: 100,

@@ -12,6 +12,7 @@ import Footer from "@/components/Footer";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Link from 'next/link';
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -36,13 +37,11 @@ export default function Home() {
     }
   }, [isAuthenticated]);
   
-  const handleAuthenticatedButtonClick = () => {
-    if (onboardingCompleted) {
-      router.push("/matches");
-    } else {
-      router.push("/onboarding");
-    }
+  const handleFindListener = () => {
+    // Always go to onboarding first - it will handle redirects as needed
+    router.push('/onboarding');
   };
+
   const testimonials = [
     {
       name: "Priya Sharma",
@@ -53,7 +52,7 @@ export default function Home() {
     {
       name: "Rahul Gupta",
       rating: 5,
-      text: "The quiz helped me find exactly what I was looking for. My sessions have been life-changing.",
+      text: "The onboarding helped me find exactly what I was looking for. My sessions have been life-changing.",
       location: "Delhi"
     },
     {
@@ -67,7 +66,7 @@ export default function Home() {
   const howItWorks = [
     {
       step: "01",
-      title: "Take Quiz",
+      title: "Take onboarding",
       description: "Answer a few questions about your preferences, concerns, and what you're looking for in a mental wellness practitioner.",
       icon: <CheckCircle className="h-8 w-8 text-primary" />
     },
@@ -102,19 +101,17 @@ export default function Home() {
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
             Connect with verified Psychoshala-trained mental wellness practitioners. 
-            Take our personalized quiz, swipe through matches, and book your session.
+            Take our personalized onboarding, swipe through matches, and book your session.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {isLoading ? (
               <Button variant="default" size="lg" disabled>
                 Loading...
               </Button>
-            ) : isAuthenticated ? (
-              <Button variant="default" size="lg" onClick={handleAuthenticatedButtonClick}>
+            ) : (
+              <Button variant="default" size="lg" onClick={handleFindListener}>
                 Find Your Listener
               </Button>
-            ) : (
-              <AuthDialog triggerText="Find Your Listener" variant="default" size="lg" />
             )}
             <Button variant="outline" size="lg" className="group">
               Learn More
@@ -199,12 +196,10 @@ export default function Home() {
             <Button variant="default" size="lg" disabled>
               Loading...
             </Button>
-          ) : isAuthenticated ? (
-            <Button variant="default" size="lg" onClick={handleAuthenticatedButtonClick}>
+          ) : (
+            <Button variant="default" size="lg" onClick={handleFindListener}>
               Get Started Today
             </Button>
-          ) : (
-            <AuthDialog triggerText="Get Started Today" variant="default" size="lg" />
           )}
         </div>
       </section>
