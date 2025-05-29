@@ -14,54 +14,45 @@ export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-
   useEffect(() => {
-    // Load appointments from localStorage
-    const loadAppointments = () => {
+    // Load appointments from API
+    const loadAppointments = async () => {
       setIsLoading(true);
-      const savedAppointments = JSON.parse(localStorage.getItem("appointments") || "[]");
-      
-      // Add some mock past appointments for demo
-      const mockPastAppointments = [
-        {
-          practitioner: {
-            id: 1,
-            name: "Dr. Priya Sharma",
-            image: null,
-            specializations: ["Anxiety", "Depression"],
-            rating: 4.9,
-            location: "Mumbai"
-          },
-          date: "Dec 15, 2024",
-          time: "2:00 PM",
-          sessionType: "video",
-          bookingId: "BK1734234567",
-          status: "completed",
-          duration: "50 minutes",
-          notes: "Great session, feeling much better about managing stress."
-        },
-        {
-          practitioner: {
-            id: 2,
-            name: "Dr. Rahul Gupta",
-            image: null,
-            specializations: ["Relationship Counseling"],
-            rating: 4.8,
-            location: "Delhi"
-          },
-          date: "Dec 10, 2024",
-          time: "4:00 PM",
-          sessionType: "audio",
-          bookingId: "BK1733934567",
-          status: "completed",
-          duration: "45 minutes",
-          notes: "Helpful techniques for better communication with partner."
+      try {
+        const response = await fetch('/api/appointments');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch appointments');
         }
-      ];
-      
-      const allAppointments = [...mockPastAppointments, ...savedAppointments];
-      setAppointments(allAppointments);
-      setIsLoading(false);
+        
+        const { appointments: dbAppointments } = await response.json();
+        
+        // Format appointments for UI display
+        const formattedAppointments = dbAppointments.map(appt => ({
+          id: appt._id,
+          practitioner: {
+            id: appt.practitioner._id,
+            name: appt.practitioner.name,
+            image: appt.practitioner.image,
+            specializations: appt.practitioner.specializations,
+            rating: appt.practitioner.rating,
+            location: appt.practitioner.location
+          },
+          date: new Date(appt.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          time: appt.time,
+          sessionType: appt.sessionType,
+          bookingId: appt.bookingId || `BK${Date.now().toString().substring(7)}`,
+          status: appt.status,
+          duration: appt.duration || "50 minutes",
+          notes: appt.notes
+        }));
+        
+        setAppointments(formattedAppointments);
+      } catch (error) {
+        console.error('Error loading appointments:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     loadAppointments();
@@ -139,7 +130,6 @@ export default function AppointmentsPage() {
           : app
       );
       setAppointments(updatedAppointments);
-      localStorage.setItem("appointments", JSON.stringify(updatedAppointments.filter(app => app.status !== "cancelled")));
     }
   };
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,8 +12,20 @@ import { ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Redirect if not authenticated
+  if (status === "loading") {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+
+  if (!session) {
+    router.push("/");
+    return null;
+  }
   
   const questions = [
     {
@@ -21,7 +34,7 @@ export default function OnboardingPage() {
       description: "Share what's on your mind and select the areas you'd like support with",
       type: "multiple",
       hasTextInput: true,
-      textInputPlaceholder: "Tell us what's going on in your own words...",
+      textInputPlaceholder: "...",
       options: [
         { id: "stress", label: "Stress & Anxiety", emoji: "😰" },
         { id: "confidence", label: "Self-Confidence", emoji: "💪" },
@@ -160,17 +173,70 @@ export default function OnboardingPage() {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
-  };
+  };  const handleComplete = async () => {
+    setIsSubmitting(true);
+    
+    try {
+      // Map values from form to match the enum values in User model
+      const mapSessionType = (type) => {
+        const mapping = {
+          "video": "Video",
+          "audio": "Audio", 
+          "text": "Text",
+          "flexible": "Video" // Default to Video for flexible
+        };
+        return mapping[type] || 'Video';
+      };
+      
+      const mapGender = (gender) => {
+        const mapping = {
+          "male": "Male",
+          "female": "Female",
+          "no-preference": "No preference"
+        };
+        return mapping[gender] || 'No preference';
+      };
+      
+      // Transform answers to the format expected by the User model
+      const onboardingData = {
+        preferences: {
+          concerns: Array.isArray(answers.concerns) ? answers.concerns : [],
+          sessionType: mapSessionType(answers.sessionType),
+          practitionerGender: mapGender(answers.practitionerGender),
+          language: answers.language ? answers.language.charAt(0).toUpperCase() + answers.language.slice(1) : 'English',
+          ageGroup: answers.ageGroup || '25-34',
+          experience: answers.experience || 'First time'
+        },
+        quizParameters: answers
+      };
 
-  const handleComplete = () => {
-    // Save answers to localStorage (in real app, send to API)
-    localStorage.setItem("onboarding_answers", JSON.stringify(answers));
-    localStorage.setItem("onboarding_completed", "true");
-    
-    console.log("Onboarding completed with answers:", answers);
-    
-    // Redirect to matches page
-    router.push("/matches");
+      // Save to database via API
+      const response = await fetch('/api/users/onboarding', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(onboardingData),
+      });      if (response.ok) {
+        console.log("Onboarding completed successfully");
+        router.push("/matches");
+      } else {
+        const errorData = await response.json();
+        console.error("Failed to complete onboarding:", errorData);
+        
+        if (errorData.details) {
+          console.error("Validation errors:", errorData.details);
+        }
+        
+        // TODO: You could add a toast notification or error message UI here
+        // For now, we're just logging to console
+      }
+    } catch (error) {
+      console.error("Error completing onboarding:", error);
+      // You might want to show an error message to the user
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const isSelected = (optionId) => {
@@ -209,46 +275,6 @@ export default function OnboardingPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Text Input integrated as first option for concerns question */}
-            {currentQuestion.hasTextInput && (
-              <div className="mb-4">
-                <Card
-                  className={`transition-all hover:shadow-md ${
-                    hasTextInput()
-                      ? "border-primary bg-primary/5 shadow-md"
-                      : "border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10 hover:border-primary/50"
-                  }`}
-                >
-                  <CardContent className="p-4">
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-3">
-                        <span className="text-2xl">✍️</span>
-                        <div className="flex-1">
-                          <div className="font-medium text-primary">Tell us your story</div>
-                          <div className="text-sm text-muted-foreground">
-                            Describe what&apos;s happening in your own words
-                          </div>
-                        </div>
-                        {hasTextInput() && (
-                          <CheckCircle className="h-5 w-5 text-primary" />
-                        )}
-                      </div>
-                      <Input
-                        placeholder={currentQuestion.textInputPlaceholder}
-                        value={answers[`${currentQuestion.id}_text`] || ""}
-                        onChange={(e) => handleTextInput(e.target.value)}
-                        className="text-base placeholder:text-muted-foreground/60"
-                        maxLength={150}
-                      />
-                      <div className="flex justify-between items-center text-xs text-muted-foreground">
-                        <span>This helps us find the perfect match for you</span>
-                        <span>{(answers[`${currentQuestion.id}_text`] || "").length}/150</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
 
             {/* Subtle divider for concerns question */}
             {currentQuestion.hasTextInput && (
@@ -293,6 +319,47 @@ export default function OnboardingPage() {
                 </Card>
               ))}
             </div>
+
+            {/* Text Input integrated as first option for concerns question */}
+            {currentQuestion.hasTextInput && (
+              <div className="my-4">
+                <Card
+                  className={`transition-all hover:shadow-md ${
+                    hasTextInput()
+                      ? "border-primary bg-primary/5 shadow-md"
+                      : "border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10 hover:border-primary/50"
+                  }`}
+                >
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-2xl">✍️</span>
+                        <div className="flex-1">
+                          <div className="font-medium text-primary">Tell us your story</div>
+                          <div className="text-sm text-muted-foreground">
+                            Describe what&apos;s happening in your own words
+                          </div>
+                        </div>
+                        {hasTextInput() && (
+                          <CheckCircle className="h-5 w-5 text-primary" />
+                        )}
+                      </div>
+                      <Input
+                        placeholder={currentQuestion.textInputPlaceholder}
+                        value={answers[`${currentQuestion.id}_text`] || ""}
+                        onChange={(e) => handleTextInput(e.target.value)}
+                        className="text-base placeholder:text-muted-foreground/60"
+                        maxLength={150}
+                      />
+                      <div className="flex justify-between items-center text-xs text-muted-foreground">
+                        <span>This helps us find the perfect match for you</span>
+                        <span>{(answers[`${currentQuestion.id}_text`] || "").length}/150</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </CardContent>
         </Card>
 

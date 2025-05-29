@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,8 +9,40 @@ import { Heart, Users, Calendar, Star, ArrowRight, CheckCircle } from "lucide-re
 import AuthDialog from "@/components/AuthDialog";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function Home() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [onboardingCompleted, setOnboardingCompleted] = useState(null);
+  const isAuthenticated = status === "authenticated";
+  const isLoading = status === "loading";
+  
+  // Fetch user profile to check onboarding status when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetch('/api/users/profile')
+        .then(res => res.json())
+        .then(data => {
+          if (data?.user) {
+            setOnboardingCompleted(data.user.onboardingCompleted);
+          }
+        })
+        .catch(err => {
+          console.error("Error fetching user profile:", err);
+        });
+    }
+  }, [isAuthenticated]);
+  
+  const handleAuthenticatedButtonClick = () => {
+    if (onboardingCompleted) {
+      router.push("/matches");
+    } else {
+      router.push("/onboarding");
+    }
+  };
   const testimonials = [
     {
       name: "Priya Sharma",
@@ -71,7 +105,17 @@ export default function Home() {
             Take our personalized quiz, swipe through matches, and book your session.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <AuthDialog triggerText="Find Your Listener" variant="default" size="lg" />
+            {isLoading ? (
+              <Button variant="default" size="lg" disabled>
+                Loading...
+              </Button>
+            ) : isAuthenticated ? (
+              <Button variant="default" size="lg" onClick={handleAuthenticatedButtonClick}>
+                Find Your Listener
+              </Button>
+            ) : (
+              <AuthDialog triggerText="Find Your Listener" variant="default" size="lg" />
+            )}
             <Button variant="outline" size="lg" className="group">
               Learn More
               <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
@@ -81,7 +125,7 @@ export default function Home() {
       </section>
 
       {/* How It Works Section */}
-      <section className="container mx-auto px-4 py-20">
+      <section id="how-it-works" className="container mx-auto px-4 py-20">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">How It Works</h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -110,7 +154,7 @@ export default function Home() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="bg-muted/30 py-20">
+      <section id="testimonials" className="bg-muted/30 py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">What Our Users Say</h2>
@@ -133,7 +177,7 @@ export default function Home() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground italic">
-                    "{testimonial.text}"
+                    &ldquo;{testimonial.text}&rdquo;
                   </p>
                 </CardContent>
               </Card>
@@ -151,7 +195,17 @@ export default function Home() {
           <p className="text-xl text-muted-foreground mb-8">
             Join thousands of users who have found their perfect mental wellness practitioner
           </p>
-          <AuthDialog triggerText="Get Started Today" variant="default" size="lg" />
+          {isLoading ? (
+            <Button variant="default" size="lg" disabled>
+              Loading...
+            </Button>
+          ) : isAuthenticated ? (
+            <Button variant="default" size="lg" onClick={handleAuthenticatedButtonClick}>
+              Get Started Today
+            </Button>
+          ) : (
+            <AuthDialog triggerText="Get Started Today" variant="default" size="lg" />
+          )}
         </div>
       </section>
 

@@ -4,19 +4,27 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Menu, X, Heart, User, Calendar, LogOut } from "lucide-react";
+import { Menu, X, Heart, User, Calendar, LogOut, Settings } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
 import AuthDialog from "@/components/AuthDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { data: session, status } = useSession();
   
-  // Mock user state - in real app this would come from NextAuth
-  const [user, setUser] = useState(null); // Set to null for logged out state
-  // const [user, setUser] = useState({ name: "John Doe", email: "john@example.com", image: null });
+  const user = session?.user;
+  const isLoading = status === "loading";
 
   const handleLogout = () => {
-    setUser(null);
-    // In real app: signOut()
+    signOut({ callbackUrl: "/" });
   };
 
   return (
@@ -29,9 +37,7 @@ export default function Navbar() {
               <Heart className="h-5 w-5 text-primary-foreground" />
             </div>
             <span className="font-bold text-xl">UnMute</span>
-          </Link>
-
-          {/* Desktop Navigation */}
+          </Link>          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {user ? (
               <>
@@ -40,9 +46,6 @@ export default function Navbar() {
                 </Link>
                 <Link href="/appointments" className="text-muted-foreground hover:text-foreground transition-colors">
                   Appointments
-                </Link>
-                <Link href="/profile" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Profile
                 </Link>
               </>
             ) : (
@@ -55,23 +58,44 @@ export default function Navbar() {
                 </Link>
               </>
             )}
-          </div>
-
-          {/* Auth Section */}
+          </div>          {/* Auth Section */}          
           <div className="hidden md:flex items-center space-x-4">
-            {user ? (
+            {isLoading ? (
+              <div className="text-sm text-muted-foreground">Loading...</div>
+            ) : user ? (
               <div className="flex items-center space-x-4">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.image} alt={user.name} />
-                  <AvatarFallback>
-                    {user.name?.charAt(0) || <User className="h-4 w-4" />}
-                  </AvatarFallback>
-                </Avatar>
                 <span className="text-sm font-medium">{user.name}</span>
-                <Button variant="ghost" size="sm" onClick={handleLogout}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Avatar className="h-8 w-8 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all">
+                      <AvatarImage src={user.image} alt={user.name} />
+                      <AvatarFallback>
+                        {user.name?.charAt(0) || <User className="h-4 w-4" />}
+                      </AvatarFallback>
+                    </Avatar>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile" className="cursor-pointer flex w-full items-center">
+                        <User className="h-4 w-4 mr-2" />
+                        Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/appointments" className="cursor-pointer flex w-full items-center">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Appointments
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             ) : (
               <div className="flex items-center space-x-2">
@@ -91,13 +115,12 @@ export default function Navbar() {
               {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           </div>
-        </div>
-
-        {/* Mobile Navigation */}
+        </div>        {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="md:hidden border-t py-4">
-            <div className="flex flex-col space-y-4">
-              {user ? (
+            <div className="flex flex-col space-y-4">              {isLoading ? (
+                <div className="text-sm text-muted-foreground">Loading...</div>
+              ) : user ? (
                 <>
                   <Link 
                     href="/matches" 
@@ -106,29 +129,33 @@ export default function Navbar() {
                   >
                     Matches
                   </Link>
-                  <Link 
-                    href="/appointments" 
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Appointments
-                  </Link>
+                  <div className="flex items-center justify-between pt-2 border-t">
+                    <div className="flex items-center space-x-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user.image} alt={user.name} />
+                        <AvatarFallback>
+                          {user.name?.charAt(0) || <User className="h-4 w-4" />}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm font-medium">{user.name}</span>
+                    </div>
+                  </div>
                   <Link 
                     href="/profile" 
-                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-foreground transition-colors flex items-center"
                     onClick={() => setIsMenuOpen(false)}
                   >
+                    <User className="h-4 w-4 mr-2" />
                     Profile
                   </Link>
-                  <div className="flex items-center space-x-2 pt-2 border-t">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.image} alt={user.name} />
-                      <AvatarFallback>
-                        {user.name?.charAt(0) || <User className="h-4 w-4" />}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm font-medium">{user.name}</span>
-                  </div>
+                  <Link 
+                    href="/appointments" 
+                    className="text-muted-foreground hover:text-foreground transition-colors flex items-center"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Appointments
+                  </Link>
                   <Button variant="ghost" size="sm" onClick={handleLogout} className="justify-start">
                     <LogOut className="h-4 w-4 mr-2" />
                     Logout

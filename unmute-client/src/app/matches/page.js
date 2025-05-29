@@ -23,99 +23,8 @@ import {
   getRemainingPractitioners,
   hasMidScreenPromptShown,
   setMidScreenPromptShown,
-  resetMidScreenPromptStatus,
-  safeGetItem,
-  safeSetItem
-} from "@/utils/swipeLimit";
-
-// Mock practitioners data - moved outside component to prevent re-creation on each render
-const mockPractitioners = [
-  {
-    id: 1,
-    name: "Dr. Priya Sharma",
-    image: null,
-    specializations: ["Anxiety", "Depression", "Stress Management"],
-    experience: "8 years",
-    rating: 4.9,
-    reviewCount: 127,
-    languages: ["English", "Hindi"],
-    sessionTypes: ["video", "audio", "text"],
-    location: "Mumbai",
-    bio: "Dr. Priya is a licensed clinical psychologist with expertise in cognitive behavioral therapy and mindfulness-based interventions. She has helped hundreds of clients overcome anxiety and depression.",
-    education: "PhD in Clinical Psychology, Mumbai University",
-    approach: "I believe in creating a safe, non-judgmental space where clients can explore their thoughts and feelings. My approach combines evidence-based techniques with compassionate understanding.",
-    availability: "Mon-Fri: 9 AM - 6 PM",
-    price: "₹1,200/session"
-  },
-  {
-    id: 2,
-    name: "Dr. Rahul Gupta",
-    image: null,
-    specializations: ["Relationship Counseling", "Family Therapy", "Communication"],
-    experience: "12 years",
-    rating: 4.8,
-    reviewCount: 203,
-    languages: ["English", "Hindi", "Punjabi"],
-    sessionTypes: ["video", "audio"],
-    location: "Delhi",
-    bio: "Dr. Rahul specializes in relationship and family therapy, helping couples and families build stronger connections and resolve conflicts constructively.",
-    education: "Masters in Marriage & Family Therapy, Delhi University",
-    approach: "I focus on improving communication patterns and building emotional intimacy. Every relationship has the potential for growth and healing.",
-    availability: "Tue-Sat: 10 AM - 8 PM",
-    price: "₹1,500/session"
-  },
-  {
-    id: 3,
-    name: "Dr. Ananya Patel",
-    image: null,
-    specializations: ["Trauma Therapy", "PTSD", "Mindfulness"],
-    experience: "10 years",
-    rating: 4.9,
-    reviewCount: 156,
-    languages: ["English", "Gujarati"],
-    sessionTypes: ["video", "text"],
-    location: "Ahmedabad",
-    bio: "Dr. Ananya is a trauma-informed therapist who specializes in helping clients heal from past experiences and develop resilience for the future.",
-    education: "PhD in Trauma Psychology, Gujarat University",
-    approach: "Healing happens at your own pace. I provide a gentle, supportive environment where you can process difficult experiences safely.",
-    availability: "Mon-Thu: 11 AM - 7 PM",
-    price: "₹1,300/session"
-  },
-  {
-    id: 4,
-    name: "Dr. Vikram Singh",
-    image: null,
-    specializations: ["Work Stress", "Career Counseling", "Burnout"],
-    experience: "6 years",
-    rating: 4.7,
-    reviewCount: 89,
-    languages: ["English", "Hindi"],
-    sessionTypes: ["video", "audio", "text"],
-    location: "Bangalore",
-    bio: "Dr. Vikram helps professionals manage work-related stress and find better work-life balance. He understands the unique challenges of modern workplace.",
-    education: "Masters in Occupational Psychology, IISc Bangalore",
-    approach: "I help you develop practical strategies to manage stress while pursuing your career goals. Balance is achievable with the right tools.",
-    availability: "Mon-Fri: 6 PM - 10 PM, Weekends: 9 AM - 5 PM",
-    price: "₹1,100/session"
-  },
-  {
-    id: 5,
-    name: "Dr. Meera Krishnan",
-    image: null,
-    specializations: ["Self-Esteem", "Body Image", "Confidence Building"],
-    experience: "9 years",
-    rating: 4.8,
-    reviewCount: 134,
-    languages: ["English", "Tamil", "Malayalam"],
-    sessionTypes: ["video", "audio"],
-    location: "Chennai",
-    bio: "Dr. Meera empowers individuals to build self-confidence and develop a positive self-image. She believes everyone deserves to feel good about themselves.",
-    education: "PhD in Positive Psychology, University of Madras",
-    approach: "Self-compassion is the foundation of confidence. Together, we'll challenge negative self-talk and build your inner strength.",
-    availability: "Tue-Sat: 9 AM - 6 PM",
-    price: "₹1,250/session"
-  }
-];
+  resetMidScreenPromptStatus
+} from "@/utils/dbUtils";
 
 export default function MatchesPage() {
   const [practitioners, setPractitioners] = useState([]);
@@ -133,65 +42,136 @@ export default function MatchesPage() {
   const [hasMorePractitioners, setHasMorePractitioners] = useState(true);
   
   const router = useRouter();
-
   useEffect(() => {
-    // Load any existing matches from localStorage
-    try {
-      // Import the safeGetItem from swipeLimit to use it here
-      const savedMatches = safeGetItem ? safeGetItem('savedMatches') : 
-        (typeof window !== 'undefined' ? localStorage?.getItem('savedMatches') : null);
-      
-      if (savedMatches) {
-        const parsedMatches = JSON.parse(savedMatches);
-        setMatches(parsedMatches);
-        setShortlistCount(parsedMatches.length);
+    // Load existing matches from database
+    const loadMatches = async () => {
+      try {
+        const matchesResponse = await fetch('/api/matches');
+        if (!matchesResponse.ok) {
+          throw new Error('Failed to fetch matches');
+        }
+        
+        const { matches: dbMatches } = await matchesResponse.json();
+        
+        // Filter only shortlisted practitioners
+        const shortlistedMatches = dbMatches.filter(match => match.matchType === 'shortlisted');
+        
+        // Extract practitioner data from the match object
+        const practitionersData = shortlistedMatches.map(match => ({
+          id: match.practitioner._id,
+          name: match.practitioner.name,
+          image: match.practitioner.image,
+          specializations: match.practitioner.specializations,
+          experience: match.practitioner.experience,
+          rating: match.practitioner.rating,
+          reviewCount: match.practitioner.reviews,
+          languages: match.practitioner.languages,
+          sessionTypes: match.practitioner.sessionTypes,
+          location: match.practitioner.location,
+          bio: match.practitioner.bio,
+          education: match.practitioner.education,
+          approach: match.practitioner.approach || "My approach is personalized to each client's needs.",
+          availability: Array.isArray(match.practitioner.availability) 
+            ? match.practitioner.availability.join(", ")
+            : match.practitioner.availability,
+          price: match.practitioner.price
+        }));
+        
+        setMatches(practitionersData);
+        setShortlistCount(practitionersData.length);
         
         // If they've already shortlisted 3 practitioners, check if mid-screen prompt should be shown
-        if (parsedMatches.length >= MAX_SHORTLISTED_PRACTITIONERS && !hasMidScreenPromptShown()) {
-          setShowMidScreenPrompt(true);
-          setMidScreenPromptShown(true);
+        if (practitionersData.length >= MAX_SHORTLISTED_PRACTITIONERS) {
+          const midScreenShown = await hasMidScreenPromptShown();
+          if (!midScreenShown) {
+            setShowMidScreenPrompt(true);
+            setMidScreenPromptShown(true);
+          }
         }
+      } catch (error) {
+        console.error('Error loading matches:', error);
       }
-    } catch (error) {
-      console.error('Error loading saved matches:', error);
-    }
-
-    // Simulate loading practitioners based on onboarding answers
+    };
+    
+    // Load practitioners based on user preferences
     const loadPractitioners = async () => {
       setIsLoading(true);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Filter out practitioners that are already shortlisted
-      const availablePractitioners = getRemainingPractitioners(mockPractitioners);
-      
-      // Track which practitioners are shown
-      const newShownIds = availablePractitioners.map(p => p.id);
-      saveShownPractitioners(newShownIds);
-      
-      setPractitioners(availablePractitioners);
-      setRemainingPractitioners(availablePractitioners);
-      setIsLoading(false);
+      try {
+        
+        // Fetch practitioners from our API
+        console.log("Fetching practitioners...");
+        const response = await fetch('/api/practitioners');
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Failed to fetch practitioners: ${response.status} - ${errorText}`);
+          throw new Error(`Failed to fetch practitioners: ${response.status}`);
+        }
+          const responseData = await response.json();
+        console.log("API response:", responseData);
+        
+        const dbPractitioners = responseData.practitioners || [];
+        const allPractitionersSeen = responseData.allPractitionersSeen || false;
+        console.log(`Found ${dbPractitioners.length} practitioners, all seen: ${allPractitionersSeen}`);
+        
+        if (dbPractitioners.length === 0) {
+          // If we get an empty array with allPractitionersSeen flag,
+          // set hasMorePractitioners to false to show the end screen
+          if (allPractitionersSeen) {
+            setHasMorePractitioners(false);
+          }
+          
+          return; // Exit early, no practitioners to process
+        }
+        
+        // Format the practitioner data
+        const formattedPractitioners = dbPractitioners.map(p => ({
+          id: p._id,
+          name: p.name,
+          image: p.image,
+          specializations: p.specializations || [],
+          experience: p.experience || "New",
+          rating: p.rating || 4.0,
+          reviewCount: p.reviews || 0,
+          languages: p.languages || ["English"],
+          sessionTypes: p.sessionTypes || ["video"],
+          location: p.location || "Remote",
+          bio: p.bio || "Professional therapist ready to help.",
+          education: Array.isArray(p.education) ? p.education.join(", ") : (p.education || "Licensed Professional"),
+          approach: p.approach || "My approach is personalized to each client's needs.",
+          availability: Array.isArray(p.availability) ? p.availability.join(", ") : (p.availability || "Available upon request"),
+          price: p.price || "₹1,000/session"
+        }));
+        
+        console.log("Formatted practitioners:", formattedPractitioners);
+        
+        // Track which practitioners are shown
+        const newShownIds = formattedPractitioners.map(p => p.id);
+        await saveShownPractitioners(newShownIds);
+        
+        setPractitioners(formattedPractitioners);
+        setRemainingPractitioners(formattedPractitioners);
+      } catch (error) {
+        console.error('Error loading practitioners:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
+    loadMatches();
     loadPractitioners();
-  }, []); // Remove dependency array to prevent infinite loops
+  }, []); // Empty dependency array to run once on mount
 
-  // Save matches to localStorage whenever they change
+  // Check URL parameters for restart flag
   useEffect(() => {
-    if (matches.length > 0) {
-      safeSetItem('savedMatches', JSON.stringify(matches));
-    }
-    
-    // Check URL parameters for restart flag
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('restart') === 'true') {
       handleRestartSwiping();
       // Clean up URL by removing the query parameter
       window.history.replaceState({}, document.title, '/matches');
     }
-  }, [matches]);
+  }, []);
 
   // Add a click handler to close the expanded button when clicking outside
   useEffect(() => {
@@ -213,7 +193,7 @@ export default function MatchesPage() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showMatchesSummary]);
-  
+
   const handleSwipe = (direction) => {
     const currentPractitioner = practitioners[currentIndex];
     
@@ -223,52 +203,74 @@ export default function MatchesPage() {
     } else {
       // No more practitioners - reached the end
       setHasMorePractitioners(false); // Immediately update the UI state to show "Congratulations" popup
-      
-      // We're keeping the user at the end state until they explicitly choose to restart
-      // No automatic reset or shuffling anymore to prevent UI inconsistency
     }
     
     // Use requestAnimationFrame to defer non-visual updates
     // This ensures the UI updates first, then we handle logic
-    requestAnimationFrame(() => {
+    requestAnimationFrame(async () => {
       if (direction === "right") {
         // Check if already shortlisted
-        if (isPractitionerShortlisted(currentPractitioner.id)) {
+        const isShortlisted = await isPractitionerShortlisted(currentPractitioner.id);
+        if (isShortlisted) {
           return;
         }
         
-        // Add to matches
+        // Add to local matches for immediate UI update
         const updatedMatches = [...matches, currentPractitioner];
-        
-        // Update UI state immediately
         setMatches(updatedMatches);
         setShortlistCount(updatedMatches.length);
         
-        // Defer localStorage and other non-UI operations using requestAnimationFrame for smoother animations
-        requestAnimationFrame(() => {
-          // Save to localStorage using our safe helper function
-          safeSetItem('savedMatches', JSON.stringify(updatedMatches));
+        // Save match to database
+        try {
+          await fetch('/api/matches', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              practitionerId: currentPractitioner.id,
+              matchType: 'shortlisted'
+            }),
+          });
           
           // Track this practitioner as shown
-          saveShownPractitioners([currentPractitioner.id]);
+          await saveShownPractitioners([currentPractitioner.id]);
           
           // Remove the practitioner from the remaining list
           const updatedRemaining = remainingPractitioners.filter(p => p.id !== currentPractitioner.id);
           setRemainingPractitioners(updatedRemaining);
           
           // If this was the 3rd right swipe, show the mid-screen prompt
-          if (updatedMatches.length >= MAX_SHORTLISTED_PRACTITIONERS && !hasMidScreenPromptShown()) {
-            setShowMidScreenPrompt(true);
-            setMidScreenPromptShown(true);
+          if (updatedMatches.length >= MAX_SHORTLISTED_PRACTITIONERS) {
+            const midScreenShown = await hasMidScreenPromptShown();
+            if (!midScreenShown) {
+              setShowMidScreenPrompt(true);
+              await setMidScreenPromptShown(true);
+            }
           }
-        });
+        } catch (error) {
+          console.error('Error saving match to database:', error);
+        }
         
       } else if (direction === "left") {
-        // Track this practitioner as shown for left swipes too
-        // Defer this non-critical operation
-        requestAnimationFrame(() => {
-          saveShownPractitioners([currentPractitioner.id]);
-        });
+        // Save "passed" match to database
+        try {
+          await fetch('/api/matches', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              practitionerId: currentPractitioner.id,
+              matchType: 'passed'
+            }),
+          });
+          
+          // Track this practitioner as shown for left swipes too
+          await saveShownPractitioners([currentPractitioner.id]);
+        } catch (error) {
+          console.error('Error saving passed match to database:', error);
+        }
       }
     });
   };
@@ -286,20 +288,52 @@ export default function MatchesPage() {
   const handleGoToMatchesList = () => {
     router.push('/matches/list');
   };
-  
-  const handleRestartSwiping = () => {
+
+  const handleRestartSwiping = async () => {
     // Clear the shown practitioners to restart the queue
-    resetPractitionersQueue();
+    await resetPractitionersQueue();
     
     // Reset UI state
     setShowMidScreenPrompt(false);
     setHasMorePractitioners(true);
-    
-    // Reload practitioners (excluding already shortlisted ones)
-    const availablePractitioners = getRemainingPractitioners(mockPractitioners);
-    setPractitioners(availablePractitioners);
-    setRemainingPractitioners(availablePractitioners);
     setCurrentIndex(0);
+    
+    // Reload practitioners from database
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/practitioners');
+      if (!response.ok) {
+        throw new Error('Failed to fetch practitioners');
+      }
+      
+      const { practitioners: dbPractitioners } = await response.json();
+      
+      // Format the practitioner data
+      const formattedPractitioners = dbPractitioners.map(p => ({
+        id: p._id,
+        name: p.name,
+        image: p.image,
+        specializations: p.specializations,
+        experience: p.experience,
+        rating: p.rating,
+        reviewCount: p.reviews,
+        languages: p.languages,
+        sessionTypes: p.sessionTypes,
+        location: p.location,
+        bio: p.bio,
+        education: Array.isArray(p.education) ? p.education.join(", ") : p.education,
+        approach: p.approach || "My approach is personalized to each client's needs.",
+        availability: Array.isArray(p.availability) ? p.availability.join(", ") : "Available upon request",
+        price: p.price
+      }));
+      
+      setPractitioners(formattedPractitioners);
+      setRemainingPractitioners(formattedPractitioners);
+    } catch (error) {
+      console.error('Error loading practitioners 2:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const currentPractitioner = practitioners[currentIndex];
@@ -359,8 +393,6 @@ export default function MatchesPage() {
       </div>
     );
   }
-  
-  // No booking check needed here
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -396,8 +428,7 @@ export default function MatchesPage() {
             />
             
             {/* Swipe buttons are now inside the PractitionerCard component */}
-          </div>
-        ) : (
+          </div>        ) : (
           <div className="text-center py-10 max-w-md mx-auto bg-white/95 rounded-xl shadow-lg p-8 backdrop-blur-sm border border-green-100/50 animate-fadeIn">
             {matches.length > 0 ? (
               <>
@@ -405,18 +436,17 @@ export default function MatchesPage() {
                   <div className="absolute inset-0 bg-gradient-to-br from-green-100 to-green-50 animate-pulse-slow"></div>
                   <CheckCircle className="h-12 w-12 text-green-500 relative z-10 animate-bounce-subtle" />
                 </div>
-                <h2 className="text-2xl font-bold mb-3 text-green-800">
-                  {shortlistCount > 0 ? "Congratulations!" : "No more practitioners to show"}
-                </h2>
-                <p className="text-lg font-medium text-green-700 mb-2">
-                  {shortlistCount > 0 ? "You've explored all available practitioners!" : "Check back later for new matches"}
+                <p className="text-lg text-green-700 mb-2 font-bold">
+                  {shortlistCount > 0 
+                    ? "You've explored all available practitioners!" 
+                    : "You've gone through all available practitioners"}
                 </p>
                 <p className="text-muted-foreground mb-6 text-base">
-                  {shortlistCount > 0 ? 
-                    `You've shortlisted ${shortlistCount} practitioner${shortlistCount !== 1 ? 's' : ''}. You're now ready to connect and book a session.` : 
-                    "We're constantly adding new practitioners to our network."}
+                  {shortlistCount > 0 
+                    ? `You're now ready to connect and book a session.`
+                    : "You haven't shortlisted any practitioners yet. You can reset and try again, or check back later for new practitioners."}
                 </p>
-                {shortlistCount > 0 && (
+                {shortlistCount > 0 ? (
                   <div className="flex flex-col space-y-4 max-w-xs mx-auto">
                     <Button
                       variant="default"
@@ -427,10 +457,25 @@ export default function MatchesPage() {
                       <Heart className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
                       <span className="font-medium text-lg">View {shortlistCount} Matches</span>
                     </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleRestartSwiping}
+                      className="w-full"
+                    >
+                      Reset & Find More
+                    </Button>
                     <p className="text-sm text-muted-foreground italic">
                       Take the next step in your mental health journey
                     </p>
                   </div>
+                ) : (
+                  <Button
+                    variant="default"
+                    onClick={handleRestartSwiping}
+                    className="border-dashed"
+                  >
+                    Reset & Try Again
+                  </Button>
                 )}
               </>
             ) : (
@@ -439,17 +484,17 @@ export default function MatchesPage() {
                   <Clock className="h-10 w-10 text-gray-400" />
                 </div>
                 <h2 className="text-xl font-bold mb-3">
-                  No practitioners shortlisted yet
+                  No practitioners available
                 </h2>
                 <p className="text-muted-foreground mb-5 text-sm">
-                  Swipe right on practitioners you'd like to connect with
+                  You&apos;ve seen all available practitioners. Check back later for new options.
                 </p>
                 <Button
                   variant="outline" 
                   onClick={handleRestartSwiping}
                   className="border-dashed"
                 >
-                  Try again
+                  Reset & Try Again
                 </Button>
               </>
             )}
@@ -653,8 +698,6 @@ export default function MatchesPage() {
           </DialogContent>
         </Dialog>
       )}
-
-      {/* We keep the BookingModal component but won't use it in this page */}
     </div>
   );
 }

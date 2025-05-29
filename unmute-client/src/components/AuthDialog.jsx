@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -72,7 +73,6 @@ export default function AuthDialog({
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -81,23 +81,44 @@ export default function AuthDialog({
     setIsLoading(true);
     
     try {
-      // Mock API call - replace with actual NextAuth signIn/signUp
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       if (isSignUpMode) {
-        // Mock successful registration
-        console.log("Registration successful:", formData);
-        // In real app: create account then sign in
+        // Registration with NextAuth credentials provider
+        const result = await signIn('credentials', {
+          email: formData.email,
+          password: formData.password,
+          name: formData.name,
+          redirect: false,
+        });
+        
+        if (result?.error) {
+          setErrors({ submit: result.error });
+          return;
+        }
+        
         // After successful registration, redirect to onboarding
         router.push("/onboarding");
       } else {
-        // Mock successful login
-        console.log("Login successful:", formData);
-        // In real app: signIn with NextAuth
-        // Check if user has completed onboarding
-        const hasCompletedOnboarding = localStorage.getItem("onboarding_completed");
-        if (hasCompletedOnboarding) {
-          router.push("/matches");
+        // Login with NextAuth credentials provider
+        const result = await signIn('credentials', {
+          email: formData.email,
+          password: formData.password,
+          redirect: false,
+        });
+        
+        if (result?.error) {
+          setErrors({ submit: "Invalid email or password" });
+          return;
+        }
+        
+        // Check if user has completed onboarding by calling API
+        const response = await fetch('/api/users/profile');
+        if (response.ok) {
+          const { user } = await response.json();
+          if (user.onboardingCompleted) {
+            router.push("/matches");
+          } else {
+            router.push("/onboarding");
+          }
         } else {
           router.push("/onboarding");
         }
@@ -112,18 +133,25 @@ export default function AuthDialog({
       setIsLoading(false);
     }
   };
-
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      // Mock Google sign in - replace with NextAuth Google provider
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log("Google sign in successful");
+      const result = await signIn('google', { redirect: false });
+      
+      if (result?.error) {
+        setErrors({ submit: "Google sign in failed. Please try again." });
+        return;
+      }
       
       // Check if user has completed onboarding
-      const hasCompletedOnboarding = localStorage.getItem("onboarding_completed");
-      if (hasCompletedOnboarding) {
-        router.push("/matches");
+      const response = await fetch('/api/users/profile');
+      if (response.ok) {
+        const { user } = await response.json();
+        if (user.onboardingCompleted) {
+          router.push("/matches");
+        } else {
+          router.push("/onboarding");
+        }
       } else {
         router.push("/onboarding");
       }

@@ -16,17 +16,46 @@ export default function MatchesListPage() {
   const [showProfile, setShowProfile] = useState(false);
   const [showBooking, setShowBooking] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
   useEffect(() => {
-    // Load matches from localStorage
-    const loadMatches = () => {
+    // Load matches from API
+    const loadMatches = async () => {
       setIsLoading(true);
       try {
-        const savedMatches = localStorage.getItem('savedMatches');
-        if (savedMatches) {
-          const parsedMatches = JSON.parse(savedMatches);
-          setMatches(parsedMatches);
+        const response = await fetch('/api/matches');
+        if (!response.ok) {
+          throw new Error('Failed to fetch matches');
         }
+        
+        const { matches: dbMatches } = await response.json();
+        
+        // Filter only shortlisted practitioners
+        const shortlistedMatches = dbMatches.filter(match => match.matchType === 'shortlisted');
+        
+        // Extract practitioner data from the match object
+        const practitionersData = shortlistedMatches.map(match => ({
+          id: match.practitioner._id,
+          name: match.practitioner.name,
+          image: match.practitioner.image,
+          specializations: match.practitioner.specializations,
+          experience: match.practitioner.experience,
+          rating: match.practitioner.rating,
+          reviewCount: match.practitioner.reviews || 0,
+          languages: match.practitioner.languages,
+          sessionTypes: match.practitioner.sessionTypes,
+          location: match.practitioner.location,
+          bio: match.practitioner.bio,
+          education: Array.isArray(match.practitioner.education) 
+            ? match.practitioner.education.join(", ") 
+            : match.practitioner.education,
+          approach: match.practitioner.approach || "My approach is personalized to each client's needs.",
+          availability: Array.isArray(match.practitioner.availability) 
+            ? match.practitioner.availability.join(", ") 
+            : "Available upon request",
+          price: match.practitioner.price,
+          messageStatus: match.messageStatus
+        }));
+        
+        setMatches(practitionersData);
       } catch (error) {
         console.error('Error loading matches:', error);
       } finally {

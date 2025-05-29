@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,75 +13,99 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Mail, Phone, MapPin, Calendar, Edit, Save, X, Plus, Clock } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import { concernOptions, languageOptions, sessionTypeOptions, ageGroupOptions, practitionerGenderOptions } from "@/utils/preferencesOptions";
 
 export default function ProfilePage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState(null);
+  const [error, setError] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/");
+    }
+  }, [status, router]);
 
   useEffect(() => {
-    // Load user data from localStorage or use mock data
-    const loadUserData = () => {
+    // Fetch user data from API
+    const fetchUserData = async () => {
+      if (status !== "authenticated") return;
+      
       setIsLoading(true);
+      setError(null);
       
-      // Try to get user data from localStorage
-      const savedUser = localStorage.getItem("user");
-      
-      if (savedUser) {
-        setUser(JSON.parse(savedUser));
-      } else {
-        // Mock user data if none exists
-        const mockUser = {
-          name: "Aryan Singh",
-          email: "aryan.singh@example.com",
-          phone: "+91 98765 43210",
-          location: "Bangalore, India",
-          dateJoined: "January 2024",
-          profileImage: null,
-          bio: "I'm looking to improve my mental well-being and find better ways to manage stress in my daily life.",
-          preferences: {
-            language: "English",
-            sessionType: "Video",
-            practitionerGender: "No preference",
-            concerns: ["Anxiety", "Stress Management", "Work-Life Balance"],
-            ageGroup: "25-34",
-            experience: "First time"
-          },
-          upcomingSessions: 2,
-          completedSessions: 3,
-          notifications: [
-            {
-              id: 1,
-              message: "Your session with Dr. Priya Sharma is tomorrow at 2:00 PM",
-              date: "1 day ago",
-              read: false
-            },
-            {
-              id: 2,
-              message: "Dr. Rahul Gupta has sent you a message",
-              date: "3 days ago",
-              read: true
-            }
-          ]
-        };
+      try {
+        const response = await fetch('/api/users/profile');
         
-        setUser(mockUser);
-        localStorage.setItem("user", JSON.stringify(mockUser));
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch profile');
+        }
+        
+        const data = await response.json();
+        console.log('Fetched user data:', data.user);
+        setUser(data.user);
+        
+        // Set default notifications if none exist
+        if (!data.user.notifications || data.user.notifications.length === 0) {
+          data.user.notifications = [];
+        }
+        
+        // Set default concerns if none exist
+        if (!data.user.preferences?.concerns || data.user.preferences?.concerns.length === 0) {
+          data.user.preferences = {
+            ...data.user.preferences,
+            concerns: []
+          };
+        }
+        
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+        setError('Failed to load profile data. Please try again.');
+      } finally {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     };
 
-    loadUserData();
-  }, []);
+    if (status === "authenticated") {
+      fetchUserData();
+    }
+  }, [status]);
 
-  const handleEditToggle = () => {
+  const handleEditToggle = async () => {
     if (isEditing) {
-      // Save changes
-      setUser(editedUser);
-      localStorage.setItem("user", JSON.stringify(editedUser));
-      setIsEditing(false);
+      // Save changes to database
+      setIsSaving(true);
+      try {
+        const response = await fetch('/api/users/profile', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(editedUser),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update profile');
+        }
+        
+        const data = await response.json();
+        setUser(data.user);
+        setIsEditing(false);
+        
+      } catch (err) {
+        console.error('Error saving profile:', err);
+        setError('Failed to save profile changes. Please try again.');
+      } finally {
+        setIsSaving(false);
+      }
     } else {
       // Start editing
       setEditedUser({...user});
@@ -90,6 +116,7 @@ export default function ProfilePage() {
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditedUser(null);
+    setError(null);
   };
 
   const handleInputChange = (e) => {
@@ -110,48 +137,66 @@ export default function ProfilePage() {
       }
     }));
   };
-
-  const handleAddConcern = () => {
-    const newConcern = prompt("Enter a new concern:");
-    if (newConcern && newConcern.trim() !== "") {
-      setEditedUser(prev => ({
-        ...prev,
-        preferences: {
-          ...prev.preferences,
-          concerns: [...prev.preferences.concerns, newConcern.trim()]
-        }
-      }));
-    }
-  };
-
-  const handleRemoveConcern = (concern) => {
+  const handleConcernToggle = (concernId) => {
+    const currentConcerns = editedUser.preferences?.concerns || [];
+    const isSelected = currentConcerns.includes(concernId);
+    
+    const updatedConcerns = isSelected
+      ? currentConcerns.filter(c => c !== concernId)
+      : [...currentConcerns, concernId];
+    
     setEditedUser(prev => ({
       ...prev,
       preferences: {
         ...prev.preferences,
-        concerns: prev.preferences.concerns.filter(c => c !== concern)
+        concerns: updatedConcerns
       }
     }));
   };
 
-  const handleMarkAllRead = () => {
-    const updatedUser = {
-      ...user,
-      notifications: user.notifications.map(notification => ({
+  const handleMarkAllRead = async () => {
+    try {
+      const updatedNotifications = user.notifications.map(notification => ({
         ...notification,
         read: true
-      }))
-    };
-    setUser(updatedUser);
-    localStorage.setItem("user", JSON.stringify(updatedUser));
+      }));
+      
+      const response = await fetch('/api/users/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ notifications: updatedNotifications }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update notifications');
+      }
+      
+      const data = await response.json();
+      setUser(data.user);
+      
+    } catch (err) {
+      console.error('Error updating notifications:', err);
+      setError('Failed to mark notifications as read. Please try again.');
+    }
   };
 
-  if (isLoading || !user) {
+  if (status === "unauthenticated") {
+    return null; // Will be redirected
+  }
+  
+  if (status === "loading" || isLoading || !user) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
         <Navbar />
         <div className="container mx-auto px-4 py-20">
-          <div className="animate-pulse space-y-4">
+          <div className="flex flex-col items-center justify-center">
+            <div className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin mb-4"></div>
+            <p className="text-muted-foreground">Loading your profile...</p>
+          </div>
+          <div className="animate-pulse space-y-4 mt-8">
             <div className="h-8 bg-muted rounded w-48"></div>
             <div className="h-4 bg-muted rounded w-64"></div>
             <div className="grid gap-4">
@@ -164,6 +209,11 @@ export default function ProfilePage() {
       </div>
     );
   }
+
+  // Calculate formatted join date
+  const formattedDate = user.dateJoined 
+    ? new Date(user.dateJoined).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    : (user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently');
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
@@ -180,20 +230,41 @@ export default function ProfilePage() {
               Manage your personal information and preferences
             </p>
           </div>
-          <Button onClick={handleEditToggle}>
-            {isEditing ? (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Save Changes
-              </>
-            ) : (
-              <>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Profile
-              </>
+          <div className="flex gap-2">
+            {isEditing && (
+              <Button variant="outline" onClick={handleCancelEdit}>
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
             )}
-          </Button>
+            <Button onClick={handleEditToggle} disabled={isSaving}>
+              {isEditing ? (
+                isSaving ? (
+                  <span className="flex items-center">
+                    <span className="h-4 w-4 mr-2 rounded-full border-2 border-t-transparent border-primary animate-spin"></span>
+                    Saving...
+                  </span>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Changes
+                  </>
+                )
+              ) : (
+                <>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Profile
+                </>
+              )}
+            </Button>
+          </div>
         </div>
+
+        {error && (
+          <div className="bg-destructive/10 border border-destructive text-destructive rounded-md p-3 mb-6">
+            <p>{error}</p>
+          </div>
+        )}
 
         <Tabs defaultValue="profile" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 max-w-md">
@@ -201,7 +272,7 @@ export default function ProfilePage() {
             <TabsTrigger value="preferences">Preferences</TabsTrigger>
             <TabsTrigger value="notifications">
               Notifications
-              {user.notifications.some(n => !n.read) && (
+              {user.notifications && user.notifications.some(n => !n.read) && (
                 <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center">
                   {user.notifications.filter(n => !n.read).length}
                 </Badge>
@@ -215,9 +286,9 @@ export default function ProfilePage() {
               <CardHeader className="pb-4">
                 <div className="flex flex-col md:flex-row md:items-center gap-6">
                   <Avatar className="w-24 h-24 border-4 border-background">
-                    <AvatarImage src={user.profileImage} alt={user.name} />
+                    <AvatarImage src={user.image} alt={user.name} />
                     <AvatarFallback className="text-2xl">
-                      {user.name.split(" ").map(n => n[0]).join("")}
+                      {user.name?.split(" ").map(n => n[0]).join("") || "?"}
                     </AvatarFallback>
                   </Avatar>
                   <div>
@@ -235,13 +306,13 @@ export default function ProfilePage() {
                     </CardTitle>
                     <CardDescription className="flex items-center mt-1">
                       <Calendar className="h-4 w-4 mr-1" />
-                      Joined {user.dateJoined}
+                      Joined {formattedDate}
                     </CardDescription>
                     <div className="flex gap-2 mt-2">
                       <Badge variant="outline" className="bg-primary/10">
-                        {user.completedSessions} Sessions Completed
+                        {user.completedSessions || 0} Sessions Completed
                       </Badge>
-                      {user.upcomingSessions > 0 && (
+                      {(user.upcomingSessions > 0) && (
                         <Badge variant="outline" className="bg-accent/10">
                           {user.upcomingSessions} Upcoming
                         </Badge>
@@ -256,12 +327,15 @@ export default function ProfilePage() {
                   {isEditing ? (
                     <textarea
                       name="bio"
-                      value={editedUser.bio}
+                      value={editedUser.bio || ''}
                       onChange={handleInputChange}
                       className="w-full min-h-[100px] p-3 rounded-md border border-input bg-background"
+                      placeholder="Tell us about yourself..."
                     />
                   ) : (
-                    <p className="text-muted-foreground">{user.bio}</p>
+                    <p className="text-muted-foreground">
+                      {user.bio || "No bio has been set yet. Click 'Edit Profile' to add information about yourself."}
+                    </p>
                   )}
                 </div>
                 
@@ -272,15 +346,7 @@ export default function ProfilePage() {
                     <Label className="text-muted-foreground text-sm">Email</Label>
                     <div className="flex items-center">
                       <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-                      {isEditing ? (
-                        <Input 
-                          name="email" 
-                          value={editedUser.email} 
-                          onChange={handleInputChange} 
-                        />
-                      ) : (
-                        <span>{user.email}</span>
-                      )}
+                      <span>{user.email}</span>
                     </div>
                   </div>
                   
@@ -291,11 +357,12 @@ export default function ProfilePage() {
                       {isEditing ? (
                         <Input 
                           name="phone" 
-                          value={editedUser.phone} 
+                          value={editedUser.phone || ''} 
                           onChange={handleInputChange} 
+                          placeholder="Enter your phone number"
                         />
                       ) : (
-                        <span>{user.phone}</span>
+                        <span>{user.phone || "Not provided"}</span>
                       )}
                     </div>
                   </div>
@@ -307,24 +374,17 @@ export default function ProfilePage() {
                       {isEditing ? (
                         <Input 
                           name="location" 
-                          value={editedUser.location} 
+                          value={editedUser.location || ''} 
                           onChange={handleInputChange} 
+                          placeholder="Enter your location"
                         />
                       ) : (
-                        <span>{user.location}</span>
+                        <span>{user.location || "Not provided"}</span>
                       )}
                     </div>
                   </div>
                 </div>
               </CardContent>
-              {isEditing && (
-                <CardFooter className="flex justify-end space-x-2 pt-0">
-                  <Button variant="outline" onClick={handleCancelEdit}>
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel
-                  </Button>
-                </CardFooter>
-              )}
             </Card>
           </TabsContent>
           
@@ -332,130 +392,181 @@ export default function ProfilePage() {
           <TabsContent value="preferences" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Therapy Preferences</CardTitle>
+                <CardTitle>User Preferences</CardTitle>
                 <CardDescription>
-                  Your preferences help us match you with the right practitioners
+                  Customize your therapy experience
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">                  {/* Session Type */}
+                  <div className="space-y-2">
+                    <Label htmlFor="sessionType">Session Type</Label>
+                    {isEditing ? (
+                      <select 
+                        name="sessionType" 
+                        id="sessionType"
+                        value={editedUser.preferences?.sessionType || "Video"}
+                        onChange={handlePreferenceChange}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {sessionTypeOptions.map(option => (
+                          <option key={option.id} value={option.id}>
+                            {option.emoji} {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="h-10 flex items-center">
+                        {(() => {
+                          const option = sessionTypeOptions.find(o => o.id === user.preferences?.sessionType);
+                          return option ? (
+                            <span>
+                              <span className="mr-2">{option.emoji}</span>
+                              {option.label}
+                            </span>
+                          ) : user.preferences?.sessionType || "Video";
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                    {/* Preferred Language */}
                   <div className="space-y-2">
                     <Label htmlFor="language">Preferred Language</Label>
                     {isEditing ? (
                       <select 
-                        id="language" 
                         name="language" 
-                        value={editedUser.preferences.language} 
+                        id="language"
+                        value={editedUser.preferences?.language || "English"}
                         onChange={handlePreferenceChange}
-                        className="w-full p-2 rounded-md border border-input bg-background"
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        <option value="English">English</option>
-                        <option value="Hindi">Hindi</option>
-                        <option value="Tamil">Tamil</option>
-                        <option value="Telugu">Telugu</option>
-                        <option value="Kannada">Kannada</option>
-                        <option value="Malayalam">Malayalam</option>
+                        {languageOptions.map(option => (
+                          <option key={option.id} value={option.id.charAt(0).toUpperCase() + option.id.slice(1)}>
+                            {option.emoji} {option.label}
+                          </option>
+                        ))}
                       </select>
                     ) : (
-                      <div className="p-2 border rounded-md bg-muted/20">
-                        {user.preferences.language}
+                      <div className="h-10 flex items-center">
+                        {(() => {
+                          const currentLang = user.preferences?.language || "English";
+                          const option = languageOptions.find(o => 
+                            o.id.toLowerCase() === currentLang.toLowerCase() || 
+                            o.label.toLowerCase() === currentLang.toLowerCase()
+                          );
+                          return option ? (
+                            <span>
+                              <span className="mr-2">{option.emoji}</span>
+                              {currentLang}
+                            </span>
+                          ) : currentLang;
+                        })()}
                       </div>
                     )}
                   </div>
-                  
+                    {/* Practitioner Gender */}
                   <div className="space-y-2">
-                    <Label htmlFor="sessionType">Preferred Session Type</Label>
+                    <Label htmlFor="gender">Practitioner Gender</Label>
                     {isEditing ? (
                       <select 
-                        id="sessionType" 
-                        name="sessionType" 
-                        value={editedUser.preferences.sessionType} 
-                        onChange={handlePreferenceChange}
-                        className="w-full p-2 rounded-md border border-input bg-background"
-                      >
-                        <option value="Video">Video Call</option>
-                        <option value="Audio">Audio Call</option>
-                        <option value="Text">Text Chat</option>
-                      </select>
-                    ) : (
-                      <div className="p-2 border rounded-md bg-muted/20">
-                        {user.preferences.sessionType}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="practitionerGender">Practitioner Gender Preference</Label>
-                    {isEditing ? (
-                      <select 
-                        id="practitionerGender" 
                         name="practitionerGender" 
-                        value={editedUser.preferences.practitionerGender} 
+                        id="practitionerGender"
+                        value={editedUser.preferences?.practitionerGender || "No preference"}
                         onChange={handlePreferenceChange}
-                        className="w-full p-2 rounded-md border border-input bg-background"
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        <option value="No preference">No preference</option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
+                        {practitionerGenderOptions.map(option => (
+                          <option key={option.id} value={option.id}>
+                            {option.emoji} {option.label}
+                          </option>
+                        ))}
                       </select>
                     ) : (
-                      <div className="p-2 border rounded-md bg-muted/20">
-                        {user.preferences.practitionerGender}
+                      <div className="h-10 flex items-center">
+                        {(() => {
+                          const option = practitionerGenderOptions.find(o => o.id === user.preferences?.practitionerGender);
+                          return option ? (
+                            <span>
+                              <span className="mr-2">{option.emoji}</span>
+                              {option.label}
+                            </span>
+                          ) : user.preferences?.practitionerGender || "No preference";
+                        })()}
                       </div>
                     )}
                   </div>
-                  
+                    {/* Age Group */}
                   <div className="space-y-2">
                     <Label htmlFor="ageGroup">Age Group</Label>
                     {isEditing ? (
                       <select 
-                        id="ageGroup" 
                         name="ageGroup" 
-                        value={editedUser.preferences.ageGroup} 
+                        id="ageGroup"
+                        value={editedUser.preferences?.ageGroup || "25-34"}
                         onChange={handlePreferenceChange}
-                        className="w-full p-2 rounded-md border border-input bg-background"
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        <option value="18-24">18-24</option>
-                        <option value="25-34">25-34</option>
-                        <option value="35-44">35-44</option>
-                        <option value="45-54">45-54</option>
-                        <option value="55+">55+</option>
+                        {ageGroupOptions.map(option => (
+                          <option key={option.id} value={option.id}>
+                            {option.emoji} {option.label}
+                          </option>
+                        ))}
                       </select>
                     ) : (
-                      <div className="p-2 border rounded-md bg-muted/20">
-                        {user.preferences.ageGroup}
+                      <div className="h-10 flex items-center">
+                        {(() => {
+                          const option = ageGroupOptions.find(o => o.id === user.preferences?.ageGroup);
+                          return option ? (
+                            <span>
+                              <span className="mr-2">{option.emoji}</span>
+                              {option.label}
+                            </span>
+                          ) : user.preferences?.ageGroup || "25-34";
+                        })()}
                       </div>
                     )}
                   </div>
                 </div>
-                
+                  {/* Concerns */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <Label>Areas of Concern</Label>
-                    {isEditing && (
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={handleAddConcern}
-                      >
-                        <Plus className="h-3 w-3 mr-1" />
-                        Add
-                      </Button>
-                    )}
                   </div>
-                  <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-muted/20 min-h-[60px]">
-                    {(isEditing ? editedUser : user).preferences.concerns.map((concern, index) => (
-                      <Badge key={index} variant="secondary" className="px-3 py-1">
-                        {concern}
-                        {isEditing && (
-                          <X 
-                            className="h-3 w-3 ml-2 cursor-pointer" 
-                            onClick={() => handleRemoveConcern(concern)}
-                          />
-                        )}
-                      </Badge>
-                    ))}
-                  </div>
+                  
+                  {isEditing ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+                      {concernOptions.map((option) => {
+                        const isSelected = editedUser.preferences?.concerns?.includes(option.id);
+                        return (
+                          <div 
+                            key={option.id}
+                            onClick={() => handleConcernToggle(option.id)}
+                            className={`p-2 rounded-md border cursor-pointer flex items-center gap-2 hover:bg-muted/50 transition-colors ${
+                              isSelected ? "border-primary bg-primary/5" : ""
+                            }`}
+                          >
+                            <span className="text-lg">{option.emoji}</span>
+                            <span>{option.label}</span>
+                            {isSelected && <X className="h-3 w-3 ml-auto" />}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {(user.preferences?.concerns || []).map((concernId, index) => {
+                        const concern = concernOptions.find(c => c.id === concernId) || { id: concernId, label: concernId, emoji: "💭" };
+                        return (
+                          <Badge key={index} variant="secondary" className="text-sm py-1 px-3">
+                            <span className="mr-1">{concern.emoji}</span> {concern.label}
+                          </Badge>
+                        );
+                      })}
+                      {(user.preferences?.concerns || []).length === 0 && (
+                        <p className="text-sm text-muted-foreground">No concerns added yet.</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -471,18 +582,18 @@ export default function ProfilePage() {
                     Stay updated with your therapy journey
                   </CardDescription>
                 </div>
-                {user.notifications.some(n => !n.read) && (
+                {user.notifications && user.notifications.some(n => !n.read) && (
                   <Button variant="outline" size="sm" onClick={handleMarkAllRead}>
                     Mark all as read
                   </Button>
                 )}
               </CardHeader>
               <CardContent>
-                {user.notifications.length > 0 ? (
+                {user.notifications && user.notifications.length > 0 ? (
                   <div className="space-y-4">
-                    {user.notifications.map((notification) => (
+                    {user.notifications.map((notification, index) => (
                       <div 
-                        key={notification.id} 
+                        key={notification._id || notification.id || index} 
                         className={`p-4 rounded-lg border ${notification.read ? 'bg-card' : 'bg-accent/10 border-accent/20'}`}
                       >
                         <div className="flex justify-between items-start">
@@ -491,7 +602,7 @@ export default function ProfilePage() {
                           </p>
                           <Badge variant="outline" className="text-xs">
                             <Clock className="h-3 w-3 mr-1" />
-                            {notification.date}
+                            {notification.date || new Date(notification.createdAt).toLocaleDateString()}
                           </Badge>
                         </div>
                       </div>

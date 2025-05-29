@@ -8,12 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Clock, Video, Phone, MessageCircle, CreditCard, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+// Import API utility functions
 import { 
   getMessagedPractitionerId, 
-  getQuizParameters, 
-  saveQuizParameters,
-  setBookedSession
-} from "@/utils/swipeLimit";
+  getQuizParameters
+} from "@/utils/dbUtils";
 
 export default function BookingModal({ practitioner, isOpen, onClose }) {
   const [selectedDate, setSelectedDate] = useState(null);
@@ -26,16 +25,24 @@ export default function BookingModal({ practitioner, isOpen, onClose }) {
   
   const router = useRouter();
 
-  // Load quiz parameters from localStorage
+  // Load quiz parameters from API/user profile
   useEffect(() => {
     // Always allow booking
     setIsAllowedToBook(true);
     
-    // Load quiz parameters from localStorage
-    const parameters = getQuizParameters();
-    if (parameters) {
-      setQuizParameters(parameters);
-    }
+    // Load quiz parameters from API
+    const fetchQuizParameters = async () => {
+      try {
+        const parameters = await getQuizParameters();
+        if (parameters) {
+          setQuizParameters(parameters);
+        }
+      } catch (error) {
+        console.error("Error fetching quiz parameters:", error);
+      }
+    };
+    
+    fetchQuizParameters();
   }, [practitioner]);
 
   // Mock available dates (next 7 days)
@@ -84,85 +91,61 @@ export default function BookingModal({ practitioner, isOpen, onClose }) {
   ];
 
   // Handle session booking
-  const handleBookSession = () => {
-    // Check booking permission again as a safeguard
-    const messagedId = getMessagedPractitionerId();
-    if (messagedId && messagedId !== practitioner.id.toString()) {
-      alert("You can only book sessions with the practitioner who has contacted you.");
-      onClose();
-      return;
-    }
-    
-    // Gather booking data, including quiz parameters
-    const bookingData = {
-      practitioner: {
-        id: practitioner.id,
-        name: practitioner.name,
-      },
-      session: {
-        date: selectedDate,
-        time: selectedTime,
-        type: selectedSessionType
-      },
-      quizParameters: quizParameters || {}
-    };
-
+  const handleBookSession = async () => {
     if (!selectedDate || !selectedTime || !selectedSessionType) {
       alert("Please select a date, time, and session type.");
       return;
     }
-
+    
     setIsBooking(true);
-
-    // Simulate booking process
-    setTimeout(() => {
-      // Create appointment object that matches the expected format
-      const appointment = {
-        practitioner: {
-          id: practitioner.id,
-          name: practitioner.name,
-          image: practitioner.image,
-          specializations: practitioner.specializations,
-          rating: practitioner.rating,
-          location: practitioner.location
-        },
+    
+    try {
+      // Prepare the appointment data
+      const appointmentData = {
+        practitionerId: practitioner.id,
         date: selectedDate,
         time: selectedTime,
         sessionType: selectedSessionType,
-        bookingId: "BK" + Date.now(), // Generate unique booking ID
         status: "confirmed",
         duration: "50 minutes",
-        notes: null
-      };
-      
-      // Get existing appointments and add the new one
-      const existingAppointments = JSON.parse(localStorage.getItem("appointments") || "[]");
-      const updatedAppointments = [...existingAppointments, appointment];
-      
-      // Save updated appointments list
-      localStorage.setItem("appointments", JSON.stringify(updatedAppointments));
-      
-      // Also save booking data for any other purposes
-      const bookingData = {
-        practitioner: {
-          id: practitioner.id,
-          name: practitioner.name,
-        },
-        session: {
-          date: selectedDate,
-          time: selectedTime,
-          type: selectedSessionType
-        },
+        notes: null,
         quizParameters: quizParameters || {}
       };
-      localStorage.setItem('bookingData', JSON.stringify(bookingData));
       
-      // Mark session as booked in the app state
-      setBookedSession(true);
+      // Save appointment to the database
+      const response = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(appointmentData),
+      });
       
-      setIsBooking(false);
+      if (!response.ok) {
+        throw new Error('Failed to book appointment');
+      }
+      
+      // Update the message status to mark that the practitioner has messaged the user
+      await fetch('/api/matches', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          practitionerId: practitioner.id,
+          hasMessaged: true
+        }),
+      });
+      
+      // Update UI state
       setBookingComplete(true);
-    }, 1500);
+      
+    } catch (error) {
+      console.error('Error booking session:', error);
+      alert('Failed to book appointment. Please try again.');
+    } finally {
+      setIsBooking(false);
+    }
   };
   
   // Handle viewing appointments
