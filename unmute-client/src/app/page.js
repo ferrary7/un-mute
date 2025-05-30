@@ -1,210 +1,403 @@
 "use client";
 
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef, useEffect, useState } from "react";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Heart, Users, Calendar, Star, ArrowRight, CheckCircle } from "lucide-react";
-import AuthDialog from "@/components/AuthDialog";
+import {
+  Shield,
+  MessageCircle,
+  Clock,
+  CheckCircle,
+  Heart,
+  Calendar,
+  Star,
+  ArrowRight,
+  Users,
+  UserCheck,
+  Smile,
+  Target,
+  PhoneCall,
+  Sparkles,
+} from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import Link from 'next/link';
+import Link from "next/link";
+import homeData from "@/data/home.json";
 
-export default function Home() {
+export default function Page() {
+  const containerRef = useRef(null);
+  const [screenSize, setScreenSize] = useState({ width: 1200, height: 800 });
   const { data: session, status } = useSession();
   const router = useRouter();
   const [onboardingCompleted, setOnboardingCompleted] = useState(null);
+
   const isAuthenticated = status === "authenticated";
   const isLoading = status === "loading";
-  
+
   // Fetch user profile to check onboarding status when authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      fetch('/api/users/profile')
-        .then(res => res.json())
-        .then(data => {
+      fetch("/api/users/profile")
+        .then((res) => res.json())
+        .then((data) => {
           if (data?.user) {
             setOnboardingCompleted(data.user.onboardingCompleted);
           }
         })
-        .catch(err => {
+        .catch((err) => {
           console.error("Error fetching user profile:", err);
         });
     }
   }, [isAuthenticated]);
-  
+
   const handleFindListener = () => {
     // Always go to onboarding first - it will handle redirects as needed
-    router.push('/onboarding');
+    router.push("/onboarding");
   };
 
-  const testimonials = [
-    {
-      name: "Priya Sharma",
-      rating: 5,
-      text: "Found the perfect therapist who understands my cultural background. The matching process was so intuitive!",
-      location: "Mumbai"
-    },
-    {
-      name: "Rahul Gupta",
-      rating: 5,
-      text: "The onboarding helped me find exactly what I was looking for. My sessions have been life-changing.",
-      location: "Delhi"
-    },
-    {
-      name: "Ananya Patel",
-      rating: 5,
-      text: "Professional, verified practitioners and such an easy booking process. Highly recommend!",
-      location: "Bangalore"
-    }
-  ];
+  useEffect(() => {
+    const updateSize = () => {
+      setScreenSize({ width: window.innerWidth, height: window.innerHeight });
+    };
 
-  const howItWorks = [
-    {
-      step: "01",
-      title: "Take onboarding",
-      description: "Answer a few questions about your preferences, concerns, and what you're looking for in a mental wellness practitioner.",
-      icon: <CheckCircle className="h-8 w-8 text-primary" />
-    },
-    {
-      step: "02",
-      title: "Swipe & Match",
-      description: "Browse through verified Psychoshala-trained practitioners. Swipe right on profiles that resonate with you.",
-      icon: <Heart className="h-8 w-8 text-primary" />
-    },
-    {
-      step: "03",
-      title: "Book Session",
-      description: "Connect with your matched practitioner and book your first session. Choose video, audio, or text-based sessions.",
-      icon: <Calendar className="h-8 w-8 text-primary" />
-    }
-  ];
+    updateSize();
+    window.addEventListener("resize", updateSize);
+    return () => window.removeEventListener("resize", updateSize);
+  }, []);
 
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end start"],
+  });
+
+  // Smooth easing function for better animation feel
+  const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+
+  // Responsive animation values based on screen width
+  const isMobile = screenSize.width < 640;
+  const isTablet = screenSize.width >= 640 && screenSize.width < 1024;
+
+  const separationDistance = isMobile ? 600 : isTablet ? 800 : 1000;
+  // Responsive starting positions - centered around 0 with proper separation
+  const penCapStartX = isMobile ? -95 : isTablet ? -90 : -95;
+  const penBodyStartX = isMobile ? 50 : isTablet ? 85 : 90;
+  // Transform values for pen animation - much faster timing for better UX
+  // Responsive values: smaller separation on mobile, larger on desktop
+  const penCapX = useTransform(
+    scrollYProgress,
+    [0, 0.1],
+    [penCapStartX, -separationDistance],
+    { ease: easeOut }
+  );
+  const penBodyX = useTransform(
+    scrollYProgress,
+    [0, 0.1],
+    [penBodyStartX, separationDistance],
+    { ease: easeOut }
+  );
+  const penOpacity = useTransform(scrollYProgress, [0.08, 0.12], [1, 0]);
+  const backgroundOpacity = useTransform(scrollYProgress, [0.05, 0.15], [1, 0]);
+  const contentOpacity = useTransform(scrollYProgress, [0.1, 0.13], [0, 1]);
+  const contentScale = useTransform(scrollYProgress, [0.1, 0.13], [0.8, 1]);
+  const contentBlur = useTransform(scrollYProgress, [0.1, 0.14], [5, 0]);
+  // Parallax transforms for content sections - restored full structure
+  const heroParallaxY = useTransform(scrollYProgress, [0.15, 0.9], [0, -100]);
+  const statsParallaxY = useTransform(scrollYProgress, [0.35, 0.75], [0, -50]);
+  const featuresParallaxY = useTransform(
+    scrollYProgress,
+    [0.45, 0.85],
+    [0, -30]
+  );
+  const howItWorksParallaxY = useTransform(
+    scrollYProgress,
+    [0.55, 0.95],
+    [0, -40]
+  );
+  const testimonialsParallaxY = useTransform(
+    scrollYProgress,
+    [0.65, 1],
+    [0, -20]
+  );
+  const ctaParallaxY = useTransform(scrollYProgress, [0.7, 1], [0, -30]);
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <Navbar />
-      
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 text-center">
-        <div className="max-w-4xl mx-auto">
-          <Badge variant="secondary" className="mb-6">
-            🧠 Mental Wellness Made Simple
-          </Badge>
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Find Your Perfect
-            <br />
-            Mental Wellness Listener
-          </h1>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Connect with verified Psychoshala-trained mental wellness practitioners. 
-            Take our personalized onboarding, swipe through matches, and book your session.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            {isLoading ? (
-              <Button variant="default" size="lg" disabled>
-                Loading...
-              </Button>
-            ) : (
-              <Button variant="default" size="lg" onClick={handleFindListener}>
-                Find Your Listener
-              </Button>
-            )}
-            <Button variant="outline" size="lg" className="group">
-              Learn More
-              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </div>
-        </div>
-      </section>
 
-      {/* How It Works Section */}
-      <section id="how-it-works" className="container mx-auto px-4 py-20">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">How It Works</h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Three simple steps to connect with your ideal mental wellness practitioner
-          </p>
-        </div>
-        
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {howItWorks.map((item, index) => (
-            <Card key={index} className="text-center border-2 hover:border-primary/20 transition-colors">
-              <CardHeader>
-                <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                  {item.icon}
+      <div ref={containerRef} className="relative">
+        {/* Pen Animation Section - Fixed position with lower z-index than navbar */}
+        <motion.div
+          className="fixed inset-0 z-20 pointer-events-none"
+          style={{ opacity: penOpacity }}
+        >
+          <div className="relative w-full h-full flex items-center justify-center">
+            {/* Background overlay with fade effect - avoid navbar area */}
+            <motion.div
+              className="absolute inset-0 bg-secondary pointer-events-none"
+              style={{
+                opacity: backgroundOpacity,
+                top: "64px", // Height of navbar to avoid overlap
+              }}
+            />
+
+            <motion.div style={{ x: penCapX, y: 5 }} className="absolute z-10">
+              <Image
+                src="/pen-cap.svg"
+                alt="Pen Cap"
+                width={200}
+                height={60}
+                className="object-contain w-[150px] h-16 sm:w-56 sm:h-16 md:w-60 md:h-16 lg:w-64 lg:h-16"
+                priority
+              />
+            </motion.div>
+
+            <motion.div style={{ x: penBodyX }} className="absolute z-0">
+              <Image
+                src="/pen-body.svg"
+                alt="Pen Body"
+                width={550}
+                height={60}
+                className="object-contain w-[450px] h-16 sm:w-96 sm:h-16 md:w-[450px] md:h-16 lg:w-[520px] lg:h-16"
+                priority
+              />
+            </motion.div>
+          </div>
+        </motion.div>
+        {/* Trigger section for scroll - increased height for more time */}
+        <div className="h-[150vh] relative z-10">
+          {/* Content revealed as pen separates */}
+          <motion.div
+            style={{
+              opacity: contentOpacity,
+              scale: contentScale,
+              filter: `blur(${contentBlur}px)`,
+            }}
+            className="sticky top-0 min-h-screen transition-all duration-300"
+          >
+            <div className="min-h-screen">
+              {" "}
+              {/* Hero Section with Parallax */}
+              <motion.section
+                className="bg-secondary/95 px-4 py-32 text-center min-h-screen flex items-center"
+                style={{ y: heroParallaxY }}
+              >
+                <div className="container mx-auto max-w-4xl">
+                  <Badge className={homeData.hero.badge.className}>
+                    {homeData.hero.badge.text}
+                  </Badge>
+
+                  <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent leading-tight">
+                    {homeData.hero.title.main}
+                    <br />
+                    <span className="text-primary">
+                      {homeData.hero.title.highlight}
+                    </span>{" "}
+                    {homeData.hero.title.subtitle}
+                  </h1>
+
+                  <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
+                    {homeData.hero.description}
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    {isLoading ? (
+                      <Button variant="default" size="lg" disabled>
+                        Loading...
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="default"
+                        size="lg"
+                        onClick={handleFindListener}
+                      >
+                        {homeData.hero.buttons[0].text}
+                        <ArrowRight className="ml-2 h-5 w-5" />
+                      </Button>
+                    )}
+                    <Button variant="outline" size="lg" className="group">
+                      {homeData.hero.buttons[1].text}
+                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="text-sm font-semibold text-primary mb-2">STEP {item.step}</div>
-                <CardTitle className="text-xl">{item.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-base">
-                  {item.description}
-                </CardDescription>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section id="testimonials" className="bg-muted/30 py-20">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">What Our Users Say</h2>
-            <p className="text-xl text-muted-foreground">
-              Real stories from people who found their perfect mental wellness match
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index} className="">
-                <CardHeader>
-                  <div className="flex items-center gap-2 mb-2">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+              </motion.section>
+              {/* Stats Section with Parallax */}
+              <motion.section
+                className="py-16 bg-muted/30"
+                style={{ y: statsParallaxY }}
+              >
+                <div className="container mx-auto px-4">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 max-w-4xl mx-auto">
+                    {homeData.stats.map((stat, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: index * 0.1 }}
+                        className="text-center"
+                      >
+                        <div className="text-3xl md:text-4xl font-bold text-primary mb-2">
+                          {stat.number}
+                        </div>
+                        <div className="text-muted-foreground">
+                          {stat.label}
+                        </div>
+                      </motion.div>
                     ))}
                   </div>
-                  <CardTitle className="text-lg">{testimonial.name}</CardTitle>
-                  <CardDescription>{testimonial.location}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground italic">
-                    &ldquo;{testimonial.text}&rdquo;
+                </div>
+              </motion.section>
+              {/* How It Works Section with Parallax */}
+              <motion.section
+                id="how-it-works"
+                className="container mx-auto rounded-xl py-20 bg-primary"
+                style={{ y: howItWorksParallaxY }}
+              >
+                <div className="text-center mb-16">
+                  <h2 className="text-3xl md:text-4xl font-bold mb-4 text-secondary">
+                    {homeData.howItWorks.title}
+                  </h2>
+                  <p className="text-xl text-white max-w-3xl mx-auto">
+                    {homeData.howItWorks.subtitle}
                   </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+                </div>{" "}
+                <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                  {homeData.howItWorks.steps.map((step, index) => {
+                    const IconComponent = {
+                      Users,
+                      PhoneCall,
+                      Sparkles,
+                    }[step.icon];
 
-      {/* CTA Section */}
-      <section className="container mx-auto px-4 py-20 text-center">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Ready to Start Your Mental Wellness Journey?
-          </h2>
-          <p className="text-xl text-muted-foreground mb-8">
-            Join thousands of users who have found their perfect mental wellness practitioner
-          </p>
-          {isLoading ? (
-            <Button variant="default" size="lg" disabled>
-              Loading...
-            </Button>
-          ) : (
-            <Button variant="default" size="lg" onClick={handleFindListener}>
-              Get Started Today
-            </Button>
-          )}
-        </div>
-      </section>
+                    return (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: index * 0.2 }}
+                        className="relative"
+                      >
+                        <Card className="text-center border-2 hover:border-primary/20 transition-colors h-full">
+                          <CardHeader>
+                            <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                              <IconComponent className="h-8 w-8 text-primary" />
+                            </div>
+                            <div className="text-sm font-semibold text-primary mb-2">
+                              STEP {step.step}
+                            </div>
+                            <CardTitle className="text-xl text-foreground">
+                              {step.title}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <CardDescription className="text-base text-muted-foreground">
+                              {step.description}
+                            </CardDescription>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </motion.section>
+              {/* Testimonials Section with Parallax */}
+              <motion.section
+                id="testimonials"
+                className="bg-muted/30 py-20"
+                style={{ y: testimonialsParallaxY }}
+              >
+                <div className="container mx-auto px-4">
+                  <div className="text-center mb-16">
+                    <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
+                      {homeData.testimonials.title}
+                    </h2>
+                    <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+                      {homeData.testimonials.subtitle}
+                    </p>
+                  </div>
 
-      <Footer />
+                  <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                    {homeData.testimonials.reviews.map((review, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: index * 0.2 }}
+                        whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                      >
+                        <Card className="h-full">
+                          <CardHeader>
+                            <div className="flex items-center gap-2 mb-2">
+                              {[...Array(review.rating)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className="h-4 w-4 fill-accent text-accent"
+                                />
+                              ))}
+                            </div>
+                            <CardTitle className="text-lg text-foreground">
+                              {review.name}
+                            </CardTitle>
+                            <CardDescription className="text-muted-foreground">
+                              {review.location}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-muted-foreground italic">
+                              &ldquo;{review.text}&rdquo;
+                            </p>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              </motion.section>
+              {/* CTA Section with Parallax */}
+              <motion.section
+                className="container mx-auto px-4 py-20 text-center"
+                style={{ y: ctaParallaxY }}
+              >
+                <div className="max-w-3xl mx-auto">
+                  <h2 className="text-3xl md:text-4xl font-bold mb-6 text-foreground">
+                    {homeData.cta.title}
+                  </h2>
+                  <p className="text-xl text-muted-foreground mb-8">
+                    {homeData.cta.description}
+                  </p>
+                  {isLoading ? (
+                    <Button variant="default" size="lg" disabled>
+                      Loading...
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="default"
+                      size="lg"
+                      onClick={handleFindListener}
+                    >
+                      {homeData.cta.button.text}
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  )}
+                </div>
+              </motion.section>
+              <Footer />
+            </div>
+          </motion.div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -134,7 +134,7 @@ export default function AppointmentsPage() {
   };
 
   const handleBookNew = () => {
-    router.push("/matches");
+    router.push("/matches/list");
   };
 
   if (isLoading) {

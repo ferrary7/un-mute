@@ -1,0 +1,109 @@
+{
+  "hero": {
+    "badge": {
+      "text": "🧠 You’ve just taken a bold step — and we see you.",
+      "className": "mb-8 px-4 py-2 text-sm font-medium bg-primary/10 text-primary border-0"
+    },
+    "title": {
+      "main": "You Spoke Up.",
+      "highlight": "We’re Listening.",
+      "subtitle": ""
+    },
+    "description": "Most people stay silent about their struggles, confusion, or even their dreams. But you chose to reflect. To open up. That’s not small - that’s courage. Now, we’ll walk with you.",
+    "buttons": [
+      {
+        "text": "See Your Matches",
+        "variant": "default",
+        "className": "px-8 py-4 text-lg bg-blue-600 hover:bg-blue-700 rounded-xl",
+        "action": "findListener"
+      },
+      {
+        "text": "How It Works",
+        "variant": "outline",
+        "className": "px-8 py-4 text-lg border-2 rounded-xl"
+      }
+    ]
+  },
+  "stats": [
+    { "number": "10K+", "label": "Brave Conversations" },
+    { "number": "500+", "label": "Caring Listeners" },
+    { "number": "50K+", "label": "Steps Forward Taken" },
+    { "number": "4.9", "label": "Rated With Trust" }
+  ],
+  "features": [
+    {
+      "icon": "UserCheck",
+      "title": "Handpicked For You",
+      "description": "Based on what you shared, we've shortlisted professionals who support people exactly where you are."
+    },
+    {
+      "icon": "Smile",
+      "title": "No Pressure, Just Presence",
+      "description": "Sessions start with a simple ₹99 discovery call — no judgment, just a safe space to explore."
+    },
+    {
+      "icon": "Target",
+      "title": "Clarity, Not Confusion",
+      "description": "Get real guidance, a sense of direction, and a listener who gets you — for real."
+    }
+  ],
+  "howItWorks": {
+    "title": "What’s Next?",
+    "subtitle": "A simple path forward — crafted with care.",
+    "steps": [
+      {
+        "step": "01",
+        "title": "Swipe & Choose",
+        "description": "Explore your recommended listeners. See who feels right. Go with your gut — this is about comfort.",
+        "icon": "Users"
+      },
+      {
+        "step": "02",
+        "title": "Book a ₹99 Discovery Call",
+        "description": "It’s not therapy yet — just a first conversation to connect, ask, listen, and feel seen.",
+        "icon": "PhoneCall"
+      },
+      {
+        "step": "03",
+        "title": "Feel the Shift",
+        "description": "Clarity. Calm. Connection. You don’t have to figure it all out alone anymore.",
+        "icon": "Sparkles"
+      }
+    ]
+  },
+  "testimonials": {
+    "title": "Stories Like Yours",
+    "subtitle": "Here’s what others felt after saying ‘yes’ to being heard.",
+    "reviews": [
+      {
+        "name": "Priya Sharma",
+        "rating": 5,
+        "text": "I didn’t know what to expect, but just being matched with someone who gets me made all the difference.",
+        "location": "Mumbai",
+        "avatar": "PS"
+      },
+      {
+        "name": "Rahul Gupta",
+        "rating": 5,
+        "text": "I was stuck and overwhelmed. One call changed my perspective and gave me a plan to breathe again.",
+        "location": "Delhi",
+        "avatar": "RG"
+      },
+      {
+        "name": "Ananya Patel",
+        "rating": 5,
+        "text": "It’s hard to ask for help. But this felt easy. Soft. Human. Exactly what I needed.",
+        "location": "Bangalore",
+        "avatar": "AP"
+      }
+    ]
+  },
+  "cta": {
+    "title": "You Don’t Have to Do This Alone.",
+    "description": "You’ve already taken the first brave step. Now let someone walk with you the rest of the way.",
+    "button": {
+      "text": "Start Now — With ₹99",
+      "className": "px-8 py-4 text-lg bg-white text-blue-600 hover:bg-gray-50 rounded-xl"
+    }
+  }
+}

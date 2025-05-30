@@ -398,7 +398,7 @@ export default function MatchesPage() {
     <div className="min-h-screen relative overflow-hidden">
       {/* Background color indicators */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-r from-red-600/10 via-transparent to-green-600/10 blur-sm"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-red-600/20 via-secondary/30 to-green-600/20 blur-sm"></div>
       </div>
 
       

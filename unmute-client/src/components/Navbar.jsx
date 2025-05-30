@@ -27,18 +27,17 @@ export default function Navbar() {
   const handleLogout = () => {
     signOut({ callbackUrl: "/" });
   };
-
   return (
-    <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+    <nav className="border-b border-border/40 bg-secondary/95 backdrop-blur supports-[backdrop-filter]:bg-secondary/80 sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
+          {/* Logo */}          
           <Link href="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <Heart className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-bold text-xl">UnMute</span>
-          </Link>          
+            <span className="font-bold text-xl text-foreground">UnMute</span>
+          </Link>
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {user ? (
@@ -67,10 +66,9 @@ export default function Navbar() {
           {/* Auth Section */}          
           <div className="hidden md:flex items-center space-x-4">
             {isLoading ? (
-              <div className="text-sm text-muted-foreground">Loading...</div>
-            ) : user ? (
+              <div className="text-sm text-muted-foreground">Loading...</div>            ) : user ? (
               <div className="flex items-center space-x-4">
-                <span className="text-sm font-medium">{user.name}</span>
+                <span className="text-sm font-medium text-foreground">{user.name}</span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Avatar className="h-8 w-8 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all">
@@ -139,10 +137,9 @@ export default function Navbar() {
                           <AvatarFallback>
                             {user.name?.charAt(0) || <User className="h-5 w-5" />}
                           </AvatarFallback>
-                        </Avatar>
-                        <div className="flex flex-col flex-1">
+                        </Avatar>                        <div className="flex flex-col flex-1">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium">{user.name}</span>
+                            <span className="text-sm font-medium text-foreground">{user.name}</span>
                             <ChevronDown className={`h-4 w-4 transition-transform ${isMobileProfileOpen ? 'rotate-180' : ''}`} />
                           </div>
                           <span className="text-xs text-muted-foreground">{user.email}</span>
@@ -175,7 +172,15 @@ export default function Navbar() {
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <Heart className="h-4 w-4 mr-3" />
-                    Matches
+                    Find Listeners
+                  </Link>
+                  <Link 
+                    href="/matches/list" 
+                    className="text-foreground hover:text-primary transition-colors py-2 flex items-center"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Heart className="h-4 w-4 mr-3" />
+                    Your Matches
                   </Link>
                   <Link 
                     href="/appointments" 
