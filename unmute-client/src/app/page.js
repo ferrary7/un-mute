@@ -12,23 +12,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import {
-  Shield,
-  MessageCircle,
-  Clock,
-  CheckCircle,
-  Heart,
-  Calendar,
   Star,
   ArrowRight,
   Users,
-  UserCheck,
-  Smile,
-  Target,
   PhoneCall,
   Sparkles,
+  ChevronDown,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -113,6 +103,9 @@ export default function Page() {
   const contentOpacity = useTransform(scrollYProgress, [0.1, 0.13], [0, 1]);
   const contentScale = useTransform(scrollYProgress, [0.1, 0.13], [0.8, 1]);
   const contentBlur = useTransform(scrollYProgress, [0.1, 0.14], [5, 0]);
+
+  // Scroll hint opacity - disappears when user starts scrolling
+  const scrollHintOpacity = useTransform(scrollYProgress, [0, 0.05], [1, 0]);
   // Parallax transforms for content sections - restored full structure
   const heroParallaxY = useTransform(scrollYProgress, [0.15, 0.9], [0, -100]);
   const statsParallaxY = useTransform(scrollYProgress, [0.35, 0.75], [0, -50]);
@@ -151,7 +144,6 @@ export default function Page() {
                 top: "64px", // Height of navbar to avoid overlap
               }}
             />
-
             <motion.div style={{ x: penCapX, y: 5 }} className="absolute z-10">
               <Image
                 src="/pen-cap.svg"
@@ -161,8 +153,7 @@ export default function Page() {
                 className="object-contain w-[150px] h-16 sm:w-56 sm:h-16 md:w-60 md:h-16 lg:w-64 lg:h-16"
                 priority
               />
-            </motion.div>
-
+            </motion.div>{" "}
             <motion.div style={{ x: penBodyX }} className="absolute z-0">
               <Image
                 src="/pen-body.svg"
@@ -172,6 +163,27 @@ export default function Page() {
                 className="object-contain w-[450px] h-16 sm:w-96 sm:h-16 md:w-[450px] md:h-16 lg:w-[520px] lg:h-16"
                 priority
               />
+            </motion.div>
+            {/* Scroll Hint - appears below the pen and fades out when scrolling starts */}
+            <motion.div
+              style={{ opacity: scrollHintOpacity }}
+              className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 pointer-events-none"
+            >
+              <div className="flex flex-col items-center text-primary">
+                <p className="text-sm sm:text-base mb-2 font-medium">
+                  Scroll to un-mute yourself.
+                </p>
+                <motion.div
+                  animate={{ y: [0, 8, 0] }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                >
+                  <ChevronDown className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+                </motion.div>
+              </div>
             </motion.div>
           </div>
         </motion.div>
@@ -193,7 +205,7 @@ export default function Page() {
                 className="bg-secondary/95 px-3 py-32 text-center min-h-screen flex items-center"
                 style={{ y: heroParallaxY }}
               >
-                <div className="container mx-auto max-w-4xl flex justify-center flex-col">
+                <div className="container mx-auto max-w-4xl flex justify-center items-center flex-col">
                   <div className="flex justify-center mb-50"> </div>
                   <Badge className={homeData.hero.badge.className}>
                     {homeData.hero.badge.text}
@@ -212,7 +224,7 @@ export default function Page() {
                     {homeData.hero.description}
                   </p>
 
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <div className="flex flex-row gap-4 justify-center">
                     {isLoading ? (
                       <Button variant="default" size="lg" disabled>
                         Loading...
@@ -262,7 +274,7 @@ export default function Page() {
               {/* How It Works Section with Parallax */}
               <motion.section
                 id="how-it-works"
-                className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 bg-primary rounded-xl lg:rounded-2xl"
+                className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 bg-primary lg:rounded-2xl"
                 style={{ y: howItWorksParallaxY }}
               >
                 <div className="text-center mb-8 sm:mb-12 lg:mb-16">
