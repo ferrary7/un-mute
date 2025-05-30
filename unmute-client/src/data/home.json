@@ -12,7 +12,7 @@
     "description": "Most people stay silent about their struggles, confusion, or even their dreams. But you chose to reflect. To open up. That’s not small - that’s courage. Now, we’ll walk with you.",
     "buttons": [
       {
-        "text": "See Your Matches",
+        "text": "Find your Listener",
         "variant": "default",
         "className": "px-8 py-4 text-lg bg-blue-600 hover:bg-blue-700 rounded-xl",
         "action": "findListener"

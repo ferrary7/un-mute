@@ -190,10 +190,11 @@ export default function Page() {
               {" "}
               {/* Hero Section with Parallax */}
               <motion.section
-                className="bg-secondary/95 px-4 py-32 text-center min-h-screen flex items-center"
+                className="bg-secondary/95 px-3 py-32 text-center min-h-screen flex items-center"
                 style={{ y: heroParallaxY }}
               >
-                <div className="container mx-auto max-w-4xl">
+                <div className="container mx-auto max-w-4xl flex justify-center flex-col">
+                  <div className="flex justify-center mb-50"> </div>
                   <Badge className={homeData.hero.badge.className}>
                     {homeData.hero.badge.text}
                   </Badge>
@@ -223,7 +224,6 @@ export default function Page() {
                         onClick={handleFindListener}
                       >
                         {homeData.hero.buttons[0].text}
-                        <ArrowRight className="ml-2 h-5 w-5" />
                       </Button>
                     )}
                     <Button variant="outline" size="lg" className="group">
@@ -232,48 +232,48 @@ export default function Page() {
                     </Button>
                   </div>
                 </div>
-              </motion.section>
+              </motion.section>{" "}
               {/* Stats Section with Parallax */}
               <motion.section
-                className="py-16 bg-muted/30"
+                className="py-12 sm:py-16 lg:py-20 bg-muted/30"
                 style={{ y: statsParallaxY }}
               >
-                <div className="container mx-auto px-4">
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 max-w-4xl mx-auto">
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 max-w-xs sm:max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto">
                     {homeData.stats.map((stat, index) => (
                       <motion.div
                         key={index}
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: index * 0.1 }}
-                        className="text-center"
+                        className="text-center p-3 sm:p-4 lg:p-6"
                       >
-                        <div className="text-3xl md:text-4xl font-bold text-primary mb-2">
+                        <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary mb-1 sm:mb-2">
                           {stat.number}
                         </div>
-                        <div className="text-muted-foreground">
+                        <div className="text-sm sm:text-base text-muted-foreground">
                           {stat.label}
                         </div>
                       </motion.div>
                     ))}
                   </div>
                 </div>
-              </motion.section>
+              </motion.section>{" "}
               {/* How It Works Section with Parallax */}
               <motion.section
                 id="how-it-works"
-                className="container mx-auto rounded-xl py-20 bg-primary"
+                className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 bg-primary rounded-xl lg:rounded-2xl"
                 style={{ y: howItWorksParallaxY }}
               >
-                <div className="text-center mb-16">
-                  <h2 className="text-3xl md:text-4xl font-bold mb-4 text-secondary">
+                <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-secondary">
                     {homeData.howItWorks.title}
                   </h2>
-                  <p className="text-xl text-white max-w-3xl mx-auto">
+                  <p className="text-base sm:text-lg lg:text-xl text-white max-w-xs sm:max-w-lg lg:max-w-3xl mx-auto px-4 sm:px-0">
                     {homeData.howItWorks.subtitle}
                   </p>
-                </div>{" "}
-                <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 max-w-xs sm:max-w-2xl lg:max-w-5xl mx-auto">
                   {homeData.howItWorks.steps.map((step, index) => {
                     const IconComponent = {
                       Users,
@@ -289,20 +289,20 @@ export default function Page() {
                         transition={{ duration: 0.6, delay: index * 0.2 }}
                         className="relative"
                       >
-                        <Card className="text-center border-2 hover:border-primary/20 transition-colors h-full">
-                          <CardHeader>
-                            <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                              <IconComponent className="h-8 w-8 text-primary" />
+                        <Card className="text-center border-2 hover:border-primary/20 transition-colors h-full p-4 sm:p-6">
+                          <CardHeader className="pb-3 sm:pb-4">
+                            <div className="mx-auto mb-3 sm:mb-4 w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                              <IconComponent className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
                             </div>
-                            <div className="text-sm font-semibold text-primary mb-2">
+                            <div className="text-xs sm:text-sm font-semibold text-primary mb-1 sm:mb-2">
                               STEP {step.step}
                             </div>
-                            <CardTitle className="text-xl text-foreground">
+                            <CardTitle className="text-lg sm:text-xl text-foreground">
                               {step.title}
                             </CardTitle>
                           </CardHeader>
-                          <CardContent>
-                            <CardDescription className="text-base text-muted-foreground">
+                          <CardContent className="pt-0">
+                            <CardDescription className="text-sm sm:text-base text-muted-foreground">
                               {step.description}
                             </CardDescription>
                           </CardContent>
@@ -311,24 +311,24 @@ export default function Page() {
                     );
                   })}
                 </div>
-              </motion.section>
+              </motion.section>{" "}
               {/* Testimonials Section with Parallax */}
               <motion.section
                 id="testimonials"
-                className="bg-muted/30 py-20"
+                className="bg-muted/30 py-12 sm:py-16 lg:py-20"
                 style={{ y: testimonialsParallaxY }}
               >
-                <div className="container mx-auto px-4">
-                  <div className="text-center mb-16">
-                    <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+                    <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground">
                       {homeData.testimonials.title}
                     </h2>
-                    <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+                    <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-xs sm:max-w-2xl lg:max-w-3xl mx-auto px-4 sm:px-0">
                       {homeData.testimonials.subtitle}
                     </p>
                   </div>
 
-                  <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 max-w-xs sm:max-w-4xl lg:max-w-6xl mx-auto">
                     {homeData.testimonials.reviews.map((review, index) => (
                       <motion.div
                         key={index}
@@ -337,25 +337,25 @@ export default function Page() {
                         transition={{ duration: 0.6, delay: index * 0.2 }}
                         whileHover={{ y: -5, transition: { duration: 0.2 } }}
                       >
-                        <Card className="h-full">
-                          <CardHeader>
-                            <div className="flex items-center gap-2 mb-2">
+                        <Card className="h-full p-4 sm:p-6">
+                          <CardHeader className="pb-3 sm:pb-4">
+                            <div className="flex items-center gap-1 sm:gap-2 mb-2">
                               {[...Array(review.rating)].map((_, i) => (
                                 <Star
                                   key={i}
-                                  className="h-4 w-4 fill-accent text-accent"
+                                  className="h-3 w-3 sm:h-4 sm:w-4 fill-accent text-accent"
                                 />
                               ))}
                             </div>
-                            <CardTitle className="text-lg text-foreground">
+                            <CardTitle className="text-base sm:text-lg text-foreground">
                               {review.name}
                             </CardTitle>
-                            <CardDescription className="text-muted-foreground">
+                            <CardDescription className="text-sm sm:text-base text-muted-foreground">
                               {review.location}
                             </CardDescription>
                           </CardHeader>
-                          <CardContent>
-                            <p className="text-muted-foreground italic">
+                          <CardContent className="pt-0">
+                            <p className="text-sm sm:text-base text-muted-foreground italic">
                               &ldquo;{review.text}&rdquo;
                             </p>
                           </CardContent>
@@ -364,21 +364,26 @@ export default function Page() {
                     ))}
                   </div>
                 </div>
-              </motion.section>
+              </motion.section>{" "}
               {/* CTA Section with Parallax */}
               <motion.section
-                className="container mx-auto px-4 py-20 text-center"
+                className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 text-center"
                 style={{ y: ctaParallaxY }}
               >
-                <div className="max-w-3xl mx-auto">
-                  <h2 className="text-3xl md:text-4xl font-bold mb-6 text-foreground">
+                <div className="max-w-xs sm:max-w-2xl lg:max-w-3xl mx-auto">
+                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6 text-foreground">
                     {homeData.cta.title}
                   </h2>
-                  <p className="text-xl text-muted-foreground mb-8">
+                  <p className="text-base sm:text-lg lg:text-xl text-muted-foreground mb-6 sm:mb-8 px-4 sm:px-0">
                     {homeData.cta.description}
                   </p>
                   {isLoading ? (
-                    <Button variant="default" size="lg" disabled>
+                    <Button
+                      variant="default"
+                      size="lg"
+                      disabled
+                      className="text-sm sm:text-base"
+                    >
                       Loading...
                     </Button>
                   ) : (
@@ -386,9 +391,10 @@ export default function Page() {
                       variant="default"
                       size="lg"
                       onClick={handleFindListener}
+                      className="text-sm sm:text-base px-6 sm:px-8 py-2 sm:py-3"
                     >
                       {homeData.cta.button.text}
-                      <ArrowRight className="ml-2 h-5 w-5" />
+                      <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
                     </Button>
                   )}
                 </div>
