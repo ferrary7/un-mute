@@ -19,6 +19,16 @@ import {
   PhoneCall,
   Sparkles,
   ChevronDown,
+  Target,
+  Repeat,
+  Zap,
+  Heart,
+  Award,
+  Layers,
+  Briefcase,
+  GraduationCap,
+  Lightbulb,
+  BookOpen,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -52,9 +62,13 @@ export default function Page() {
         });
     }
   }, [isAuthenticated]);
-
   const handleFindListener = () => {
     // Always go to onboarding first - it will handle redirects as needed
+    router.push("/onboarding");
+  };
+
+  const handleTakeQuiz = () => {
+    // Redirect to quiz/onboarding
     router.push("/onboarding");
   };
 
@@ -210,7 +224,6 @@ export default function Page() {
                   <Badge className={homeData.hero.badge.className}>
                     {homeData.hero.badge.text}
                   </Badge>
-
                   <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent leading-tight">
                     {homeData.hero.title.main}
                     <br />
@@ -219,12 +232,10 @@ export default function Page() {
                     </span>{" "}
                     {homeData.hero.title.subtitle}
                   </h1>
-
                   <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
                     {homeData.hero.description}
-                  </p>
-
-                  <div className="flex flex-row gap-4 justify-center">
+                  </p>{" "}
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     {isLoading ? (
                       <Button variant="default" size="lg" disabled>
                         Loading...
@@ -233,7 +244,7 @@ export default function Page() {
                       <Button
                         variant="default"
                         size="lg"
-                        onClick={handleFindListener}
+                        onClick={handleTakeQuiz}
                       >
                         {homeData.hero.buttons[0].text}
                       </Button>
@@ -269,61 +280,308 @@ export default function Page() {
                       </motion.div>
                     ))}
                   </div>
+                </div>{" "}
+              </motion.section>{" "}
+              {/* About Un-Mute Section */}
+              <motion.section
+                className="py-12 sm:py-16 lg:py-20 bg-gradient-to-br from-secondary via-blue-50/30 to-secondary relative overflow-hidden"
+                style={{ y: statsParallaxY }}
+              >
+                {/* Subtle background elements */}
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute top-20 right-20 w-40 h-40 bg-primary/20 rounded-full blur-3xl"></div>
+                  <div className="absolute bottom-10 left-10 w-32 h-32 bg-secondary/20 rounded-full blur-2xl"></div>
+                  <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-accent/15 rounded-full blur-2xl"></div>
+                </div>
+
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                  <div className="max-w-5xl mx-auto">
+                    {/* Header Section */}
+                    <div className="text-center mb-12">
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6 }}
+                        className="mb-8"
+                      >
+                        <div className="inline-flex items-center px-4 py-2 bg-white/70 rounded-full border border-primary/20 shadow-sm mb-6 backdrop-blur-sm">
+                          <Heart className="h-4 w-4 text-primary mr-2" />
+                          <span className="text-primary text-sm font-medium">
+                            About Un-Mute
+                          </span>
+                        </div>
+                        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 text-gray-900 leading-tight">
+                          {homeData.aboutUnMute.title}
+                        </h2>
+                        <h3 className="text-lg sm:text-xl lg:text-2xl font-medium text-gray-600">
+                          {homeData.aboutUnMute.subtitle}
+                        </h3>
+                      </motion.div>
+
+                      <motion.p
+                        initial={{ opacity: 0, y: 15 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.1 }}
+                        className="text-lg text-gray-700 max-w-3xl mx-auto leading-relaxed"
+                      >
+                        {homeData.aboutUnMute.description}
+                      </motion.p>
+                    </div>
+
+                    {/* Benefits Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                      {homeData.aboutUnMute.benefits.map((benefit, index) => (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, y: 20 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.5, delay: index * 0.1 }}
+                          whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                          className="group"
+                        >
+                          <div className="p-6 rounded-xl bg-white/80 border border-gray-200/60 hover:bg-white hover:border-primary/40 hover:shadow-lg transition-all duration-300 h-full backdrop-blur-sm">
+                            <div className="flex items-start space-x-4">
+                              <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center mt-1">
+                                <div className="w-3 h-3 bg-primary rounded-full"></div>
+                              </div>
+                              <p className="text-gray-800 font-medium leading-relaxed text-base">
+                                {benefit}
+                              </p>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.section>
+              {/* Why Un-Mute Section */}
+              <motion.section
+                className="py-12 sm:py-16 lg:py-20 bg-muted/30"
+                style={{ y: featuresParallaxY }}
+              >
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="text-center mb-12">
+                    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 text-foreground">
+                      {homeData.whyUnMute.title}
+                    </h2>
+                    <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                      {homeData.whyUnMute.subtitle}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                    {homeData.whyUnMute.features.map((feature, index) => {
+                      const IconComponent = {
+                        Zap,
+                        Heart,
+                        Award,
+                        Target,
+                        Layers,
+                      }[feature.icon];
+
+                      return (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, y: 30 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.6, delay: index * 0.1 }}
+                        >
+                          <Card className="h-full p-6 hover:shadow-lg transition-shadow">
+                            <CardHeader className="pb-4">
+                              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                                <IconComponent className="h-6 w-6 text-primary" />
+                              </div>
+                              <CardTitle className="text-lg text-foreground">
+                                {feature.title}
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                              <p className="text-muted-foreground">
+                                {feature.description}
+                              </p>
+                            </CardContent>
+                          </Card>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </motion.section>{" "}
+              {/* Who It&apos;s For Section */}
+              <motion.section
+                className="py-12 sm:py-16 lg:py-20 bg-gradient-to-br from-secondary via-blue-50/30 to-secondary relative overflow-hidden"
+                style={{ y: featuresParallaxY }}
+              >
+                {/* Subtle background elements */}
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute top-20 left-20 w-32 h-32 bg-purple-200/60 rounded-full blur-3xl"></div>
+                  <div className="absolute bottom-20 right-20 w-40 h-40 bg-blue-200/60 rounded-full blur-3xl"></div>
+                  <div className="absolute top-1/2 right-1/3 w-24 h-24 bg-primary/20 rounded-full blur-2xl"></div>
+                </div>
+
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                  <div className="text-center mb-16">
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6 }}
+                      className="mb-6"
+                    >
+                      <div className="inline-flex items-center px-4 py-2 bg-white/70 rounded-full border border-primary/20 shadow-sm mb-6 backdrop-blur-sm">
+                        <Users className="h-4 w-4 text-primary mr-2" />
+                        <span className="text-primary text-sm font-medium">
+                          Who It&apos;s For
+                        </span>
+                      </div>
+                      <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 text-gray-900 leading-tight">
+                        {homeData.whoItsFor.title}
+                      </h2>
+                      <p className="text-lg text-gray-700 max-w-3xl mx-auto leading-relaxed">
+                        {homeData.whoItsFor.subtitle}
+                      </p>
+                    </motion.div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
+                    {homeData.whoItsFor.audience.map((audience, index) => {
+                      const IconComponent = {
+                        Briefcase,
+                        GraduationCap,
+                        Lightbulb,
+                        BookOpen,
+                      }[audience.icon];
+
+                      return (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, y: 30 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.6, delay: index * 0.15 }}
+                          whileHover={{ y: -8, transition: { duration: 0.3 } }}
+                          className="group"
+                        >
+                          <Card className="h-full px-2 py-6 text-center bg-muted/30 border border-gray-200/60 hover:bg-white hover:border-primary/40 hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
+                            <CardHeader className="pb-6">
+                              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center mx-auto mb-6 group-hover:scale-105 transition-transform duration-300">
+                                <IconComponent className="h-10 w-10 text-primary" />
+                              </div>
+                              <CardTitle className="text-xl text-gray-900 font-semibold leading-tight">
+                                {audience.title}
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                              <p className="text-gray-600 leading-relaxed">
+                                {audience.description}
+                              </p>
+                            </CardContent>
+                          </Card>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </motion.section>
+              {/* Corporate Section */}
+              <motion.section
+                className="py-12 sm:py-16 lg:py-20 bg-primary"
+                style={{ y: featuresParallaxY }}
+              >
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="max-w-4xl mx-auto text-center">
+                    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 text-secondary">
+                      {homeData.corporate.title}
+                    </h2>
+                    <h3 className="text-xl sm:text-2xl font-semibold mb-6 text-white">
+                      {homeData.corporate.subtitle}
+                    </h3>
+                    <p className="text-lg text-white mb-8 leading-relaxed">
+                      {homeData.corporate.description}
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                      {homeData.corporate.services.map((service, index) => (
+                        <motion.div
+                          key={index}
+                          initial={{
+                            opacity: 0,
+                            x: index % 2 === 0 ? -20 : 20,
+                          }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.6, delay: index * 0.1 }}
+                          className="p-4 rounded-lg bg-white/10 border border-white/20"
+                        >
+                          <p className="text-white font-medium">{service}</p>
+                        </motion.div>
+                      ))}
+                    </div>
+
+                    <p className="text-white/80 mb-8">
+                      {homeData.corporate.features}
+                    </p>
+
+                    <Button
+                      variant="secondary"
+                      size="lg"
+                      className={homeData.corporate.button.className}
+                    >
+                      {homeData.corporate.button.text}
+                    </Button>
+                  </div>
                 </div>
               </motion.section>{" "}
               {/* How It Works Section with Parallax */}
               <motion.section
                 id="how-it-works"
-                className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 bg-primary lg:rounded-2xl"
+                className=" mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 bg-secondary"
                 style={{ y: howItWorksParallaxY }}
               >
                 <div className="text-center mb-8 sm:mb-12 lg:mb-16">
-                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-secondary">
+                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-primary">
                     {homeData.howItWorks.title}
                   </h2>
-                  <p className="text-base sm:text-lg lg:text-xl text-white max-w-xs sm:max-w-lg lg:max-w-3xl mx-auto px-4 sm:px-0">
+                  <p className="text-base sm:text-lg lg:text-xl text-primary/70 max-w-xs sm:max-w-lg lg:max-w-3xl mx-auto px-4 sm:px-0">
                     {homeData.howItWorks.subtitle}
                   </p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 max-w-xs sm:max-w-2xl lg:max-w-5xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 max-w-xs sm:max-w-2xl lg:max-w-6xl mx-auto">
                   {homeData.howItWorks.steps.map((step, index) => {
                     const IconComponent = {
+                      Target,
                       Users,
                       PhoneCall,
-                      Sparkles,
+                      Repeat,
                     }[step.icon];
-
                     return (
                       <motion.div
                         key={index}
                         initial={{ opacity: 0, y: 30 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: index * 0.2 }}
-                        className="relative"
                       >
-                        <Card className="text-center border-2 hover:border-primary/20 transition-colors h-full p-4 sm:p-6">
+                        <Card className="text-center border-2 hover:border-secondary/20 transition-colors h-full p-4 sm:p-6">
                           <CardHeader className="pb-3 sm:pb-4">
-                            <div className="mx-auto mb-3 sm:mb-4 w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                            <div className="mx-auto mb-3 sm:mb-4 w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-secondary/10 flex items-center justify-center">
                               <IconComponent className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
                             </div>
                             <div className="text-xs sm:text-sm font-semibold text-primary mb-1 sm:mb-2">
                               STEP {step.step}
                             </div>
-                            <CardTitle className="text-lg sm:text-xl text-foreground">
+                            <CardTitle className="text-lg sm:text-xl text-primary">
                               {step.title}
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="pt-0">
-                            <CardDescription className="text-sm sm:text-base text-muted-foreground">
+                            <CardDescription className="text-sm sm:text-base text-primary/70">
                               {step.description}
                             </CardDescription>
                           </CardContent>
                         </Card>
                       </motion.div>
                     );
-                  })}
+                  })}{" "}
                 </div>
-              </motion.section>{" "}
+              </motion.section>
               {/* Testimonials Section with Parallax */}
               <motion.section
                 id="testimonials"
@@ -379,36 +637,45 @@ export default function Page() {
               </motion.section>{" "}
               {/* CTA Section with Parallax */}
               <motion.section
-                className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 text-center"
+                className="container mx-auto px-2 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 text-center"
                 style={{ y: ctaParallaxY }}
               >
-                <div className="max-w-xs sm:max-w-2xl lg:max-w-3xl mx-auto">
+                <div className="max-w-sm sm:max-w-2xl lg:max-w-3xl mx-auto">
                   <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6 text-foreground">
                     {homeData.cta.title}
                   </h2>
                   <p className="text-base sm:text-lg lg:text-xl text-muted-foreground mb-6 sm:mb-8 px-4 sm:px-0">
                     {homeData.cta.description}
                   </p>
-                  {isLoading ? (
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    {isLoading ? (
+                      <Button
+                        variant="default"
+                        size="lg"
+                        disabled
+                        className="text-sm sm:text-base"
+                      >
+                        Loading...
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="default"
+                        size="lg"
+                        onClick={handleTakeQuiz}
+                        className={homeData.cta.buttons[0].className}
+                      >
+                        {homeData.cta.buttons[0].text}
+                        <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
+                      </Button>
+                    )}
                     <Button
-                      variant="default"
+                      variant="outline"
                       size="lg"
-                      disabled
-                      className="text-sm sm:text-base"
+                      className={homeData.cta.buttons[1].className}
                     >
-                      Loading...
+                      {homeData.cta.buttons[1].text}
                     </Button>
-                  ) : (
-                    <Button
-                      variant="default"
-                      size="lg"
-                      onClick={handleFindListener}
-                      className="text-sm sm:text-base px-6 sm:px-8 py-2 sm:py-3"
-                    >
-                      {homeData.cta.button.text}
-                      <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
-                    </Button>
-                  )}
+                  </div>
                 </div>
               </motion.section>
               <Footer />

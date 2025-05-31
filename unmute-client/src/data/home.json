@@ -1,89 +1,166 @@
 {
   "hero": {
     "badge": {
-      "text": "🧠 You’ve just taken a bold step — and we see you.",
+      "text": "✨ Show yourself. The world is ready.",
       "className": "mb-8 px-4 py-2 text-sm font-medium bg-primary/10 text-primary border-0"
     },
     "title": {
-      "main": "You Spoke Up.",
-      "highlight": "We’re Listening.",
+      "main": "Because it's time to",
+      "highlight": "stop holding back.",
       "subtitle": ""
     },
-    "description": "Most people stay silent about their struggles, confusion, or even their dreams. But you chose to reflect. To open up. That’s not small - that’s courage. Now, we’ll walk with you.",
+    "description": "Your confidence. Your clarity. Your career. Your voice. Whether you're feeling stuck, unheard, or simply ready for more — Un-Mute helps you find the right expert who can actually help.",
     "buttons": [
       {
-        "text": "Find your Listener",
+        "text": "Take the Quiz – Find Your Growth Partner",
         "variant": "default",
         "className": "px-8 py-4 text-lg bg-blue-600 hover:bg-blue-700 rounded-xl",
-        "action": "findListener"
+        "action": "takeQuiz"
       },
       {
-        "text": "How It Works",
+        "text": "Explore How It Works",
         "variant": "outline",
         "className": "px-8 py-4 text-lg border-2 rounded-xl"
       }
     ]
   },
   "stats": [
-    { "number": "10K+", "label": "Brave Conversations" },
-    { "number": "500+", "label": "Caring Listeners" },
-    { "number": "50K+", "label": "Steps Forward Taken" },
-    { "number": "4.9", "label": "Rated With Trust" }
+    { "number": "50+", "label": "Experts" },
+    { "number": "5+", "label": "Growth Domains" },
+    { "number": "1", "label": "Mission: To Help You Speak Up" },
+    { "number": "₹99", "label": "Discovery Call" }
   ],
-  "features": [
-    {
-      "icon": "UserCheck",
-      "title": "Handpicked For You",
-      "description": "Based on what you shared, we've shortlisted professionals who support people exactly where you are."
-    },
-    {
-      "icon": "Smile",
-      "title": "No Pressure, Just Presence",
-      "description": "Sessions start with a simple ₹99 discovery call — no judgment, just a safe space to explore."
-    },
-    {
-      "icon": "Target",
-      "title": "Clarity, Not Confusion",
-      "description": "Get real guidance, a sense of direction, and a listener who gets you — for real."
-    }
-  ],
+  "aboutUnMute": {
+    "title": "You're not broken. You're just not being heard.",
+    "subtitle": "Un-Mute is not just a mental health platform.",
+    "description": "It's a personal growth engine — built for people who want to level up, but don't know where to start or who to turn to. We bring you curated coaches, mentors, communication trainers, and therapists (yes, only if needed) — all trained by Psychoshala.",
+    "benefits": [
+      "Feeling confident at work",
+      "Communicating better in relationships", 
+      "Building habits that stick",
+      "Cracking interviews",
+      "Or navigating burnout before it hits…"
+    ],
+    "closing": "At Un-Mute, your goals come first. And your silence finally gets a voice."
+  },
   "howItWorks": {
-    "title": "What’s Next?",
-    "subtitle": "A simple path forward — crafted with care.",
+    "title": "How It Works – Simple. Personal. Powerful.",
+    "subtitle": "A clear path to your growth partner.",
     "steps": [
       {
         "step": "01",
-        "title": "Swipe & Choose",
-        "description": "Explore your recommended listeners. See who feels right. Go with your gut — this is about comfort.",
+        "title": "Take a 2-minute quiz",
+        "description": "Tell us what's going on & what you need",
+        "icon": "Target"
+      },
+      {
+        "step": "02", 
+        "title": "Get matched to your best-fit experts",
+        "description": "From coaches to therapists to trainers – swipe through profiles",
         "icon": "Users"
       },
       {
-        "step": "02",
-        "title": "Book a ₹99 Discovery Call",
-        "description": "It’s not therapy yet — just a first conversation to connect, ask, listen, and feel seen.",
+        "step": "03",
+        "title": "Book a ₹99 discovery call",
+        "description": "One real conversation to explore your next step",
         "icon": "PhoneCall"
       },
       {
-        "step": "03",
-        "title": "Feel the Shift",
-        "description": "Clarity. Calm. Connection. You don’t have to figure it all out alone anymore.",
-        "icon": "Sparkles"
+        "step": "04",
+        "title": "Continue with your plan",
+        "description": "Per-session plan or discounted growth package",
+        "icon": "Repeat"
+      }
+    ],
+    "note": "Transparent pricing, no pressure, just clarity."
+  },
+  "whyUnMute": {
+    "title": "Why Un-Mute Is Unlike Anything You've Tried Before?",
+    "features": [
+      {
+        "icon": "Zap",
+        "title": "Not just therapy — it's a full-spectrum growth platform",
+        "description": "From career coaching to communication training"
+      },
+      {
+        "icon": "Heart",
+        "title": "No taboo, no judgment — it's built for aspirations, not just problems",
+        "description": "Focus on growth and potential, not just healing"
+      },
+      {
+        "icon": "Award",
+        "title": "Psychoshala-trained professionals — vetted for empathy & skill",
+        "description": "Quality assured experts who truly understand"
+      },
+      {
+        "icon": "Target",
+        "title": "Matches that make sense — aligned to your goals and comfort zone",
+        "description": "Personalized matching based on your unique needs"
+      },
+      {
+        "icon": "Layers",
+        "title": "One platform, many possibilities — career, communication, clarity, and more",
+        "description": "Everything you need for personal and professional growth"
+      }
+    ],
+    "subtitle": "Think of it as the first platform where growth feels like you — not a diagnosis."
+  },
+  "whoItsFor": {
+    "title": "Who Is It For?",
+    "subtitle": "Un-Mute is for the quietly ambitious. The ones who know they're meant for more.",
+    "audience": [
+      {
+        "icon": "Briefcase",
+        "title": "Young professionals",
+        "description": "stuck in self-doubt or career confusion"
+      },
+      {
+        "icon": "GraduationCap", 
+        "title": "College students",
+        "description": "wanting guidance and real-world readiness"
+      },
+      {
+        "icon": "Lightbulb",
+        "title": "Founders, freelancers, and creatives",
+        "description": "feeling unclear or alone"
+      },
+      {
+        "icon": "BookOpen",
+        "title": "Self-improvement seekers",
+        "description": "who've done self-help content and now want real, guided change"
       }
     ]
   },
+  "corporate": {
+    "title": "For Teams & Corporates",
+    "subtitle": "Build People, Not Just Processes.",
+    "description": "Un-Mute brings high-quality growth support directly to your team:",
+    "services": [
+      "Soft-skill development (communication, confidence, clarity)",
+      "Burnout prevention coaching",
+      "1:1 confidential expert access",
+      "Fresher interview prep & onboarding coaching",
+      "Team workshops on habits, EQ, and leadership"
+    ],
+    "features": "Tailored for your goals | Trained experts | Minimal setup",
+    "button": {
+      "text": "Book a Demo Call with one of our experts",
+      "className": "py-4 text-md bg-secondary text-primary hover:bg-secondary/90 rounded-md"
+    }
+  },
   "testimonials": {
     "title": "Stories Like Yours",
-    "subtitle": "Here’s what others felt after saying ‘yes’ to being heard.",
+    "subtitle": "Here's what others felt after saying 'yes' to being heard.",
     "reviews": [
       {
         "name": "Priya Sharma",
         "rating": 5,
-        "text": "I didn’t know what to expect, but just being matched with someone who gets me made all the difference.",
+        "text": "I didn't know what to expect, but just being matched with someone who gets me made all the difference.",
         "location": "Mumbai",
         "avatar": "PS"
       },
       {
-        "name": "Rahul Gupta",
+        "name": "Rahul Gupta", 
         "rating": 5,
         "text": "I was stuck and overwhelmed. One call changed my perspective and gave me a plan to breathe again.",
         "location": "Delhi",
@@ -92,18 +169,26 @@
       {
         "name": "Ananya Patel",
         "rating": 5,
-        "text": "It’s hard to ask for help. But this felt easy. Soft. Human. Exactly what I needed.",
+        "text": "It's hard to ask for help. But this felt easy. Soft. Human. Exactly what I needed.",
         "location": "Bangalore",
         "avatar": "AP"
       }
     ]
   },
   "cta": {
-    "title": "You Don’t Have to Do This Alone.",
-    "description": "You’ve already taken the first brave step. Now let someone walk with you the rest of the way.",
-    "button": {
-      "text": "Start Now — With ₹99",
-      "className": "px-8 py-4 text-lg bg-white text-blue-600 hover:bg-gray-50 rounded-xl"
-    }
+    "title": "Ready to Un-Mute?",
+    "description": "You're one quiz away from clarity, connection, and confidence.",
+    "buttons": [
+      {
+        "text": "Take the Quiz – Discover Your Growth Partner",
+        "className": "py-4 text-sm bg-primary text-white hover:bg-primary/90 rounded-sm",
+        "action": "takeQuiz"
+      },
+      {
+        "text": "Have Questions? Talk to Us",
+        "className": "py-4 text-md border-2 border-primary text-primary hover:bg-primary/10 rounded-sm",
+        "action": "contactUs"
+      }
+    ]
   }
 }
