@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Mail, Phone, MapPin, Calendar, Edit, Save, X, Plus, Clock } from "lucide-react";
 import Navbar from "@/components/Navbar";
-import { concernOptions, languageOptions, sessionTypeOptions, ageGroupOptions, practitionerGenderOptions } from "@/utils/preferencesOptions";
+import { primaryReasonOptions, desiredOutcomeOptions, obstacleOptions, readinessOptions, ageGroupOptions, practitionerGenderOptions } from "@/utils/preferencesOptions";
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
@@ -136,20 +136,36 @@ export default function ProfilePage() {
         [name]: value
       }
     }));
-  };
-  const handleConcernToggle = (concernId) => {
-    const currentConcerns = editedUser.preferences?.concerns || [];
-    const isSelected = currentConcerns.includes(concernId);
+  };  const handleDesiredOutcomeToggle = (outcomeId) => {
+    const currentOutcomes = editedUser.preferences?.desiredOutcome || [];
+    const isSelected = currentOutcomes.includes(outcomeId);
     
-    const updatedConcerns = isSelected
-      ? currentConcerns.filter(c => c !== concernId)
-      : [...currentConcerns, concernId];
+    const updatedOutcomes = isSelected
+      ? currentOutcomes.filter(c => c !== outcomeId)
+      : [...currentOutcomes, outcomeId];
     
     setEditedUser(prev => ({
       ...prev,
       preferences: {
         ...prev.preferences,
-        concerns: updatedConcerns
+        desiredOutcome: updatedOutcomes
+      }
+    }));
+  };
+
+  const handleObstacleToggle = (obstacleId) => {
+    const currentObstacles = editedUser.preferences?.obstacles || [];
+    const isSelected = currentObstacles.includes(obstacleId);
+    
+    const updatedObstacles = isSelected
+      ? currentObstacles.filter(c => c !== obstacleId)
+      : [...currentObstacles, obstacleId];
+    
+    setEditedUser(prev => ({
+      ...prev,
+      preferences: {
+        ...prev.preferences,
+        obstacles: updatedObstacles
       }
     }));
   };
@@ -396,20 +412,20 @@ export default function ProfilePage() {
                 <CardDescription>
                   Customize your therapy experience
                 </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">                  {/* Session Type */}
+              </CardHeader>              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Primary Reason */}
                   <div className="space-y-2">
-                    <Label htmlFor="sessionType">Session Type</Label>
+                    <Label htmlFor="primaryReason">Primary Reason for Seeking Help</Label>
                     {isEditing ? (
                       <select 
-                        name="sessionType" 
-                        id="sessionType"
-                        value={editedUser.preferences?.sessionType || "Video"}
+                        name="primaryReason" 
+                        id="primaryReason"
+                        value={editedUser.preferences?.primaryReason || "unsure"}
                         onChange={handlePreferenceChange}
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {sessionTypeOptions.map(option => (
+                        {primaryReasonOptions.map(option => (
                           <option key={option.id} value={option.id}>
                             {option.emoji} {option.label}
                           </option>
@@ -418,30 +434,31 @@ export default function ProfilePage() {
                     ) : (
                       <div className="h-10 flex items-center">
                         {(() => {
-                          const option = sessionTypeOptions.find(o => o.id === user.preferences?.sessionType);
+                          const option = primaryReasonOptions.find(o => o.id === user.preferences?.primaryReason);
                           return option ? (
                             <span>
                               <span className="mr-2">{option.emoji}</span>
                               {option.label}
                             </span>
-                          ) : user.preferences?.sessionType || "Video";
+                          ) : user.preferences?.primaryReason || "Not specified";
                         })()}
                       </div>
                     )}
                   </div>
-                    {/* Preferred Language */}
+
+                  {/* Readiness Level */}
                   <div className="space-y-2">
-                    <Label htmlFor="language">Preferred Language</Label>
+                    <Label htmlFor="readiness">Readiness Level</Label>
                     {isEditing ? (
                       <select 
-                        name="language" 
-                        id="language"
-                        value={editedUser.preferences?.language || "English"}
+                        name="readiness" 
+                        id="readiness"
+                        value={editedUser.preferences?.readiness || "exploring"}
                         onChange={handlePreferenceChange}
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {languageOptions.map(option => (
-                          <option key={option.id} value={option.id.charAt(0).toUpperCase() + option.id.slice(1)}>
+                        {readinessOptions.map(option => (
+                          <option key={option.id} value={option.id}>
                             {option.emoji} {option.label}
                           </option>
                         ))}
@@ -449,29 +466,26 @@ export default function ProfilePage() {
                     ) : (
                       <div className="h-10 flex items-center">
                         {(() => {
-                          const currentLang = user.preferences?.language || "English";
-                          const option = languageOptions.find(o => 
-                            o.id.toLowerCase() === currentLang.toLowerCase() || 
-                            o.label.toLowerCase() === currentLang.toLowerCase()
-                          );
+                          const option = readinessOptions.find(o => o.id === user.preferences?.readiness);
                           return option ? (
                             <span>
                               <span className="mr-2">{option.emoji}</span>
-                              {currentLang}
+                              {option.label}
                             </span>
-                          ) : currentLang;
+                          ) : user.preferences?.readiness || "Not specified";
                         })()}
                       </div>
                     )}
                   </div>
-                    {/* Practitioner Gender */}
+
+                  {/* Practitioner Gender */}
                   <div className="space-y-2">
                     <Label htmlFor="gender">Practitioner Gender</Label>
                     {isEditing ? (
                       <select 
                         name="practitionerGender" 
                         id="practitionerGender"
-                        value={editedUser.preferences?.practitionerGender || "No preference"}
+                        value={editedUser.preferences?.practitionerGender || "no-preference"}
                         onChange={handlePreferenceChange}
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       >
@@ -495,7 +509,8 @@ export default function ProfilePage() {
                       </div>
                     )}
                   </div>
-                    {/* Age Group */}
+
+                  {/* Age Group */}
                   <div className="space-y-2">
                     <Label htmlFor="ageGroup">Age Group</Label>
                     {isEditing ? (
@@ -527,26 +542,30 @@ export default function ProfilePage() {
                     )}
                   </div>
                 </div>
-                  {/* Concerns */}
+
+                {/* Desired Outcomes */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <Label>Areas of Concern</Label>
+                    <Label>Desired Outcomes</Label>
                   </div>
                   
                   {isEditing ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
-                      {concernOptions.map((option) => {
-                        const isSelected = editedUser.preferences?.concerns?.includes(option.id);
+                      {desiredOutcomeOptions.map((option) => {
+                        const isSelected = editedUser.preferences?.desiredOutcome?.includes(option.id);
+                        const currentSelections = editedUser.preferences?.desiredOutcome || [];
+                        const canSelect = isSelected || currentSelections.length < 2;
+                        
                         return (
                           <div 
                             key={option.id}
-                            onClick={() => handleConcernToggle(option.id)}
+                            onClick={() => canSelect && handleDesiredOutcomeToggle(option.id)}
                             className={`p-2 rounded-md border cursor-pointer flex items-center gap-2 hover:bg-muted/50 transition-colors ${
                               isSelected ? "border-primary bg-primary/5" : ""
-                            }`}
+                            } ${!canSelect ? "opacity-50 cursor-not-allowed" : ""}`}
                           >
                             <span className="text-lg">{option.emoji}</span>
-                            <span>{option.label}</span>
+                            <span className="text-sm">{option.label}</span>
                             {isSelected && <X className="h-3 w-3 ml-auto" />}
                           </div>
                         );
@@ -554,17 +573,84 @@ export default function ProfilePage() {
                     </div>
                   ) : (
                     <div className="flex flex-wrap gap-2 pt-2">
-                      {(user.preferences?.concerns || []).map((concernId, index) => {
-                        const concern = concernOptions.find(c => c.id === concernId) || { id: concernId, label: concernId, emoji: "💭" };
+                      {(user.preferences?.desiredOutcome || []).map((outcomeId, index) => {
+                        const outcome = desiredOutcomeOptions.find(c => c.id === outcomeId) || { id: outcomeId, label: outcomeId, emoji: "🎯" };
                         return (
                           <Badge key={index} variant="secondary" className="text-sm py-1 px-3">
-                            <span className="mr-1">{concern.emoji}</span> {concern.label}
+                            <span className="mr-1">{outcome.emoji}</span> {outcome.label}
                           </Badge>
                         );
                       })}
-                      {(user.preferences?.concerns || []).length === 0 && (
-                        <p className="text-sm text-muted-foreground">No concerns added yet.</p>
+                      {(user.preferences?.desiredOutcome || []).length === 0 && (
+                        <p className="text-sm text-muted-foreground">No desired outcomes specified yet.</p>
                       )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Obstacles */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label>Current Obstacles</Label>
+                  </div>
+                  
+                  {isEditing ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+                      {obstacleOptions.map((option) => {
+                        const isSelected = editedUser.preferences?.obstacles?.includes(option.id);
+                        const currentSelections = editedUser.preferences?.obstacles || [];
+                        const canSelect = isSelected || currentSelections.length < 2;
+                        
+                        return (
+                          <div 
+                            key={option.id}
+                            onClick={() => canSelect && handleObstacleToggle(option.id)}
+                            className={`p-2 rounded-md border cursor-pointer flex items-center gap-2 hover:bg-muted/50 transition-colors ${
+                              isSelected ? "border-primary bg-primary/5" : ""
+                            } ${!canSelect ? "opacity-50 cursor-not-allowed" : ""}`}
+                          >
+                            <span className="text-lg">{option.emoji}</span>
+                            <span className="text-sm">{option.label}</span>
+                            {isSelected && <X className="h-3 w-3 ml-auto" />}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {(user.preferences?.obstacles || []).map((obstacleId, index) => {
+                        const obstacle = obstacleOptions.find(c => c.id === obstacleId) || { id: obstacleId, label: obstacleId, emoji: "🚧" };
+                        return (
+                          <Badge key={index} variant="secondary" className="text-sm py-1 px-3">
+                            <span className="mr-1">{obstacle.emoji}</span> {obstacle.label}
+                          </Badge>
+                        );
+                      })}
+                      {(user.preferences?.obstacles || []).length === 0 && (
+                        <p className="text-sm text-muted-foreground">No obstacles specified yet.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Additional Context */}
+                <div className="space-y-2">
+                  <Label htmlFor="additionalContext">Additional Context</Label>
+                  {isEditing ? (
+                    <textarea
+                      name="additionalContext"
+                      id="additionalContext"
+                      value={editedUser.preferences?.additionalContext || ''}
+                      onChange={handlePreferenceChange}
+                      className="w-full min-h-[100px] p-3 rounded-md border border-input bg-background"
+                      placeholder="Any specific information you'd like your practitioner to know..."
+                      maxLength={300}
+                    />
+                  ) : (
+                    <div className="p-3 rounded-md border bg-muted/30">
+                      <p className="text-sm">
+                        {user.preferences?.additionalContext || "No additional context provided."}
+                      </p>
                     </div>
                   )}
                 </div>

@@ -13,9 +13,40 @@ const getRecommendedPractitioners = async (user) => {
   // Create query for filtering practitioners based on user preferences
   const query = {};
   
-  // Filter by user's concerns/specializations if available and not empty
-  if (user.preferences?.concerns && user.preferences.concerns.length > 0) {
-    query.specializations = { $in: user.preferences.concerns };
+  // Filter by user's primary reason and desired outcomes
+  const userInterests = [];
+  
+  // Map new preferences to specializations
+  if (user.preferences?.primaryReason) {
+    const reasonMap = {
+      'stuck': ['life-coaching', 'career-guidance'],
+      'struggling': ['therapy', 'counseling', 'mental-health'],
+      'improve': ['coaching', 'personal-development'],
+      'communication': ['relationship-counseling', 'communication-skills'],
+      'career': ['career-coaching', 'interview-prep'],
+      'unsure': ['general-counseling', 'therapy']
+    };
+    userInterests.push(...(reasonMap[user.preferences.primaryReason] || []));
+  }
+  
+  if (user.preferences?.desiredOutcome && user.preferences.desiredOutcome.length > 0) {
+    const outcomeMap = {
+      'clarity': ['therapy', 'counseling'],
+      'direction': ['life-coaching', 'career-guidance'],
+      'tools': ['cognitive-behavioral-therapy', 'anxiety-management'],
+      'confidence': ['confidence-coaching', 'communication-skills'],
+      'habits': ['behavioral-coaching', 'habit-formation'],
+      'professional': ['career-coaching', 'interview-prep']
+    };
+    
+    user.preferences.desiredOutcome.forEach(outcome => {
+      userInterests.push(...(outcomeMap[outcome] || []));
+    });
+  }
+  
+  // Filter by specializations if we have user interests
+  if (userInterests.length > 0) {
+    query.specializations = { $in: userInterests };
   }
   
   // Get practitioners that match the filter criteria, sorted by rating

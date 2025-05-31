@@ -31,24 +31,30 @@ const UserSchema = new mongoose.Schema({
   dateJoined: {
     type: Date,
     default: Date.now
-  },
-  preferences: {
-    language: {
+  },  preferences: {
+    primaryReason: {
       type: String,
-      default: 'English'
+      enum: ['stuck', 'struggling', 'improve', 'communication', 'career', 'unsure'],
+      default: 'unsure'
     },
-    sessionType: {
-      type: String,
-      enum: ['Video', 'Audio', 'Text'],
-      default: 'Video'
-    },
-    practitionerGender: {
-      type: String,
-      enum: ['No preference', 'Male', 'Female'],
-      default: 'No preference'
-    },
-    concerns: {
+    desiredOutcome: {
       type: [String],
+      validate: {
+        validator: function(v) {
+          return v.length <= 2;
+        },
+        message: 'Cannot select more than 2 desired outcomes'
+      },
+      default: []
+    },
+    obstacles: {
+      type: [String],
+      validate: {
+        validator: function(v) {
+          return v.length <= 2;
+        },
+        message: 'Cannot select more than 2 obstacles'
+      },
       default: []
     },
     ageGroup: {
@@ -56,9 +62,19 @@ const UserSchema = new mongoose.Schema({
       enum: ['18-24', '25-34', '35-44', '45-54', '55+'],
       default: '25-34'
     },
-    experience: {
+    readiness: {
       type: String,
-      default: 'First time'
+      enum: ['exploring', 'conversation', 'serious'],
+      default: 'exploring'
+    },
+    practitionerGender: {
+      type: String,
+      enum: ['no-preference', 'male', 'female'],
+      default: 'no-preference'
+    },
+    additionalContext: {
+      type: String,
+      default: ''
     }
   },
   upcomingSessions: {
