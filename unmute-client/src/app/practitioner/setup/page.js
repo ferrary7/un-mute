@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Stethoscope, Mail, Lock, Eye, EyeOff, CheckCircle } from "lucide-react";
 
-export default function PractitionerSetup() {
+function PractitionerSetupForm() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -24,7 +24,7 @@ export default function PractitionerSetup() {
   
   const router = useRouter();
   const searchParams = useSearchParams();
-  const practitionerId = searchParams.get('id');  useEffect(() => {
+  const practitionerId = searchParams.get('id');useEffect(() => {
     if (!practitionerId) {
       router.push('/practitioner/login');
       return;
@@ -246,8 +246,7 @@ export default function PractitionerSetup() {
                 {loading ? (
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Setting up...
-                  </div>
+                    Setting up...                  </div>
                 ) : (
                   "Complete Setup"
                 )}
@@ -266,5 +265,28 @@ export default function PractitionerSetup() {
         </Card>
       </motion.div>
     </div>
+  );
+}
+
+function LoadingSetup() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-cyan-100 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardContent className="p-6">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto mb-4"></div>
+            <p>Loading...</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function PractitionerSetup() {
+  return (
+    <Suspense fallback={<LoadingSetup />}>
+      <PractitionerSetupForm />
+    </Suspense>
   );
 }
