@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import dbConnect from "@/utils/dbUtils";
-import Practitioner from "@/server/models/Practitioner";
+import connectDB from "../../../../../server/config/database";
+import Practitioner from "../../../../../server/models/Practitioner";
 
 export async function GET(request, { params }) {
   try {
-    await dbConnect();
+    await connectDB();
     
     const practitioner = await Practitioner.findById(params.id);
     
