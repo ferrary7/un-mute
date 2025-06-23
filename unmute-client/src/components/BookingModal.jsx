@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Clock, Video, Phone, MessageCircle, CreditCard, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/context/ToastContext";
 // Import API utility functions
 import { 
   getMessagedPractitionerId, 
@@ -22,13 +23,81 @@ export default function BookingModal({ practitioner, isOpen, onClose }) {
   const [bookingComplete, setBookingComplete] = useState(false);
   const [isAllowedToBook, setIsAllowedToBook] = useState(true);
   const [onboardingParameters, setonboardingParameters] = useState(null);
+  const [isFirstSession, setIsFirstSession] = useState(true);
+  const [previousSessions, setPreviousSessions] = useState([]);
   
   const router = useRouter();
+  const { toast } = useToast();
+
+  // Helper function to extract numeric price from string
+  const extractPrice = (priceString) => {
+    if (!priceString) return 0;
+    const match = priceString.match(/(\d+)/);
+    return match ? parseInt(match[1]) : 0;
+  };
+
+  // Get the session price based on whether it's first session or not
+  const getSessionPrice = () => {
+    return isFirstSession ? 99 : extractPrice(practitioner.price);
+  };
+
+  // Get session duration based on whether it's first session or not
+  const getSessionDuration = () => {
+    return isFirstSession ? "20 minutes" : "50 minutes";
+  };
 
   // Load onboarding parameters from API/user profile
   useEffect(() => {
     // Always allow booking
     setIsAllowedToBook(true);
+    
+    // Check if this is the first session with this practitioner
+    const checkSessionHistory = async () => {
+      try {
+        const response = await fetch('/api/appointments');
+        if (response.ok) {
+          const { appointments } = await response.json();
+          
+          // Filter sessions with this practitioner
+          const sessionsWithPractitioner = appointments.filter(
+            appt => appt.practitioner._id === practitioner.id && 
+                   (appt.status === 'completed' || appt.status === 'confirmed')
+          );
+          
+          setPreviousSessions(sessionsWithPractitioner);
+          
+          // Check if there are any completed introductory sessions
+          const completedIntroSessions = sessionsWithPractitioner.filter(
+            appt => appt.isIntroductorySession && appt.status === 'completed'
+          );
+          
+          if (completedIntroSessions.length > 0) {
+            // There's a completed intro session, check handshake status
+            const introSession = completedIntroSessions[0];
+            if (introSession.handshakeCompleted) {
+              // Handshake completed, allow regular sessions
+              setIsFirstSession(false);
+              setIsAllowedToBook(true);
+            } else if (introSession.userHandshake === null) {
+              // Handshake pending
+              setIsAllowedToBook(false);
+            } else {
+              // Handshake declined
+              setIsAllowedToBook(false);
+            }
+          } else {
+            // No completed intro sessions
+            setIsFirstSession(sessionsWithPractitioner.length === 0);
+            setIsAllowedToBook(true);
+          }
+        }
+      } catch (error) {
+        console.error("Error checking session history:", error);
+        // Default to first session if we can't check
+        setIsFirstSession(true);
+        setIsAllowedToBook(true);
+      }
+    };
     
     // Load onboarding parameters from API
     const fetchonboardingParameters = async () => {
@@ -42,7 +111,10 @@ export default function BookingModal({ practitioner, isOpen, onClose }) {
       }
     };
     
-    fetchonboardingParameters();
+    if (practitioner) {
+      checkSessionHistory();
+      fetchonboardingParameters();
+    }
   }, [practitioner]);
 
   // Mock available dates (next 7 days)
@@ -107,7 +179,9 @@ export default function BookingModal({ practitioner, isOpen, onClose }) {
         time: selectedTime,
         sessionType: selectedSessionType,
         status: "confirmed",
-        duration: "50 minutes",
+        duration: isFirstSession ? "20 minutes" : "50 minutes",
+        sessionPrice: isFirstSession ? 99 : extractPrice(practitioner.price),
+        isIntroductorySession: isFirstSession,
         notes: null,
         onboardingParameters: onboardingParameters || {}
       };
@@ -140,9 +214,15 @@ export default function BookingModal({ practitioner, isOpen, onClose }) {
       // Update UI state
       setBookingComplete(true);
       
+      // Show success toast with action button
+      toast.bookingSuccess(practitioner.name, {
+        date: selectedDate,
+        time: selectedTime
+      });
+      
     } catch (error) {
       console.error('Error booking session:', error);
-      alert('Failed to book appointment. Please try again.');
+      toast.error('Failed to book appointment. Please try again.');
     } finally {
       setIsBooking(false);
     }
@@ -170,18 +250,53 @@ export default function BookingModal({ practitioner, isOpen, onClose }) {
     }
   }, [bookingComplete, onClose, router]);
 
-  // If another practitioner has messaged, show a message and don't allow booking
+  // If booking is not allowed, show appropriate message
   if (!isAllowedToBook) {
+    const completedIntroSessions = previousSessions.filter(
+      appt => appt.isIntroductorySession && appt.status === 'completed'
+    );
+    
+    let title, description, actionText = "View Appointments";
+    
+    if (completedIntroSessions.length > 0) {
+      const introSession = completedIntroSessions[0];
+      if (introSession.userHandshake === null) {
+        title = "Complete Your Handshake First";
+        description = `You have a completed introductory session with ${practitioner.name}. Please complete the handshake process before booking regular sessions.`;
+        actionText = "Go to Appointments";
+      } else if (!introSession.handshakeCompleted) {
+        title = "No Match Found";
+        description = `The handshake with ${practitioner.name} was not successful. You may want to try booking with a different practitioner.`;
+        actionText = "Find Other Practitioners";
+      }
+    } else {
+      title = "Booking Not Available";
+      description = "Another practitioner has already contacted you. You can only book sessions with that practitioner.";
+    }
+
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Booking Not Available</DialogTitle>
+            <DialogTitle>{title}</DialogTitle>
             <DialogDescription>
-              Another practitioner has already contacted you. You can only book sessions with that practitioner.
+              {description}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-end mt-4">
+          <div className="flex space-x-3 mt-4">
+            <Button 
+              className="flex-1"
+              onClick={() => {
+                onClose();
+                if (actionText === "Go to Appointments") {
+                  router.push('/appointments');
+                } else if (actionText === "Find Other Practitioners") {
+                  router.push('/matches');
+                }
+              }}
+            >
+              {actionText}
+            </Button>
             <Button 
               variant="outline" 
               onClick={onClose}
@@ -212,13 +327,57 @@ export default function BookingModal({ practitioner, isOpen, onClose }) {
                 <div>
                   <DialogTitle>Book Session with {practitioner.name}</DialogTitle>
                   <DialogDescription>
-                    {practitioner.specializations.slice(0, 2).join(", ")} • {practitioner.price}
+                    {practitioner.specializations.slice(0, 2).join(", ")} • 
+                    {isFirstSession ? (
+                      <span className="text-green-600 font-medium"> ₹99 (Introductory Session)</span>
+                    ) : (
+                      <span> {practitioner.price}</span>
+                    )}
                   </DialogDescription>
                 </div>
               </div>
             </DialogHeader>
             
             <div className="space-y-6">
+              {/* Introductory Session Info */}
+              {isFirstSession && (
+                <Card className="bg-blue-50 border-blue-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                        <CheckCircle className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-blue-900 mb-1">Special Introductory Session</h4>
+                        <p className="text-sm text-blue-800 mb-2">
+                          Get to know your practitioner with a 20-minute introductory session for just ₹99.
+                        </p>
+                        <ul className="text-xs text-blue-700 space-y-1">
+                          <li>• Discuss your goals and concerns</li>
+                          <li>• Experience the practitioner's approach</li>
+                          <li>• Decide if you'd like to continue with regular sessions</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Previous Sessions Info */}
+              {!isFirstSession && previousSessions.length > 0 && (
+                <Card className="bg-green-50 border-green-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <span className="text-sm font-medium text-green-800">
+                        Continuing sessions with {practitioner.name} 
+                        ({previousSessions.length} session{previousSessions.length > 1 ? 's' : ''} completed)
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
               {/* Session Type Selection */}
               <div>
                 <h3 className="font-semibold mb-3">Choose Session Type</h3>
@@ -315,9 +474,26 @@ export default function BookingModal({ practitioner, isOpen, onClose }) {
                         {sessionTypeOptions.find(opt => opt.id === selectedSessionType)?.label}
                       </span>
                     </div>
+                    <div className="flex justify-between">
+                      <span>Duration:</span>
+                      <span className="font-medium">{getSessionDuration()}</span>
+                    </div>
+                    {isFirstSession && (
+                      <div className="flex justify-between text-blue-600">
+                        <span>Session Type:</span>
+                        <span className="font-medium">Introductory Session</span>
+                      </div>
+                    )}
                     <div className="flex justify-between border-t pt-2">
                       <span className="font-semibold">Total:</span>
-                      <span className="font-bold text-primary">{practitioner.price}</span>
+                      <span className="font-bold text-primary">
+                        ₹{getSessionPrice()}
+                        {isFirstSession && (
+                          <span className="text-sm font-normal text-muted-foreground ml-2">
+                            (Special Price)
+                          </span>
+                        )}
+                      </span>
                     </div>
                   </CardContent>
                 </Card>

@@ -5,6 +5,15 @@ const PractitionerSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true
+  },  email: {
+    type: String,
+    unique: true,
+    trim: true,
+    lowercase: true,
+    sparse: true // Allows null/undefined values to not conflict with unique constraint
+  },
+  password: {
+    type: String
   },
   image: {
     type: String,
@@ -27,10 +36,13 @@ const PractitionerSchema = new mongoose.Schema({
   location: {
     type: String,
     required: true
-  },
-  bio: {
+  },  bio: {
     type: String,
     required: true
+  },
+  approach: {
+    type: String,
+    default: null
   },
   education: {
     type: [String],
@@ -77,5 +89,6 @@ const PractitionerSchema = new mongoose.Schema({
 PractitionerSchema.index({ specializations: 1 });
 PractitionerSchema.index({ location: 1 });
 PractitionerSchema.index({ rating: -1 });
+// Email index is handled by unique: true in schema definition
 
 export default mongoose.models.Practitioner || mongoose.model('Practitioner', PractitionerSchema);

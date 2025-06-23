@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 const OnboardingContext = createContext(undefined);
 
@@ -46,17 +47,25 @@ export function OnboardingProvider({ children }) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(onboardingData),
           });
-          
-          if (response.ok) {
+            if (response.ok) {
             console.log("OnboardingContext: Data saved successfully");
             localStorage.removeItem('onboardingData');
             setOnboardingData(null);
+            toast.success("Welcome to Un-Mute! 🎉", {
+              description: "Let's find your perfect therapy match",
+              duration: 5000,
+              action: {
+                label: "Find Matches",
+                onClick: () => router.push("/matches"),
+              },
+            });
             router.push('/matches');
           } else {
             console.error("OnboardingContext: Failed to save data", await response.json());
-          }
-        } catch (error) {
+            toast.error("Failed to save your preferences. Please try again.");
+          }        } catch (error) {
           console.error("OnboardingContext: Error saving data", error);
+          toast.error("An unexpected error occurred. Please try again.");
         }
       }
     };

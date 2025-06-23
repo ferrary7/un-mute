@@ -25,6 +25,7 @@ import {
   setMidScreenPromptShown,
   resetMidScreenPromptStatus
 } from "@/utils/dbUtils";
+import { useToast } from "@/context/ToastContext";
 
 export default function MatchesPage() {
   const [practitioners, setPractitioners] = useState([]);
@@ -42,6 +43,7 @@ export default function MatchesPage() {
   const [hasMorePractitioners, setHasMorePractitioners] = useState(true);
   
   const router = useRouter();
+  const { toast } = useToast();
   useEffect(() => {
     // Load existing matches from database
     const loadMatches = async () => {

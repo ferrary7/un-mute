@@ -15,6 +15,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
 import { useOnboarding } from "@/context/OnboardingContext";
+import { useToast } from "@/context/ToastContext";
 import AuthDialog from "@/components/AuthDialog";
 import { useSession } from "next-auth/react";
 import {
@@ -29,32 +30,22 @@ import {
 export default function OnboardingPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const { toast } = useToast();
   const { storeOnboardingData, onboardingData } = useOnboarding();
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
-
-  // If user is logged in and has completed onboarding, redirect to matches
+  // If user is logged in, redirect to matches list regardless of onboarding status
   useEffect(() => {
     if (status === "authenticated") {
-      // Check if user has completed onboarding
-      fetch("/api/users/profile")
-        .then((res) => res.json())
-        .then((data) => {
-          if (data?.user?.onboardingCompleted) {
-            console.log(
-              "User has already completed onboarding, redirecting to matches"
-            );
-            router.push("/matches");
-          }
-        })
-        .catch((err) => {
-          console.error("Error checking profile:", err);
-        });
+      console.log(
+        "User is authenticated, redirecting to matches list"
+      );
+      router.push("/matches/list");
     }
-  }, [status, router]); // Define questions structure using centralized options
+  }, [status, router]);// Define questions structure using centralized options
   const questions = [
     {
       id: "primaryReason",
@@ -230,21 +221,21 @@ export default function OnboardingPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(formattedData),
-        });
-
-        if (response.ok) {
+        });        if (response.ok) {
           console.log("onboarding data saved successfully for logged-in user");
+          toast.onboardingComplete();
           router.push("/matches");
         } else {
           const errorData = await response.json();
+          toast.error(errorData.error || "Failed to save your preferences");
           setError(errorData.error || "Failed to save your preferences");
         }
       } else {
         // Not logged in, show auth dialog
         setShowAuthDialog(true);
-      }
-    } catch (error) {
+      }    } catch (error) {
       console.error("Error completing onboarding:", error);
+      toast.error("An unexpected error occurred. Please try again.");
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);

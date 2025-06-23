@@ -58,8 +58,7 @@ export async function POST(request) {
     
     // Generate unique booking ID
     const bookingId = `BK${Date.now()}${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
-    
-    const appointment = new Appointment({
+      const appointment = new Appointment({
       user: user._id,
       practitioner: data.practitionerId,
       date: data.date,
@@ -68,6 +67,8 @@ export async function POST(request) {
       bookingId,
       status: data.status || "confirmed",
       duration: data.duration || "50 minutes",
+      sessionPrice: data.sessionPrice || 0,
+      isIntroductorySession: data.isIntroductorySession || false,
       notes: data.notes,
       onboardingParameters: data.onboardingParameters || {}
     });

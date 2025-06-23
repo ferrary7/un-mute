@@ -4,25 +4,51 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import connectDB from "../../../../../server/config/database";
 import User from "../../../../../server/models/User";
+import Practitioner from "../../../../../server/models/Practitioner";
 
 export const authOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    }),
-    CredentialsProvider({
+    }),    CredentialsProvider({
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
-        name: { label: "Name", type: "text" } // For registration
+        name: { label: "Name", type: "text" }, // For registration
+        userType: { label: "User Type", type: "text" } // For practitioner login
       },
       async authorize(credentials, req) {
         try {
           await connectDB();
           
-          const { email, password, name } = credentials;
+          const { email, password, name, userType } = credentials;
+            // Check if this is a practitioner login
+          if (userType === "practitioner") {
+            const practitioner = await Practitioner.findOne({ email });
+            if (!practitioner) {
+              throw new Error("Practitioner not found");
+            }
+            
+            // Check if practitioner has password set
+            if (!practitioner.password) {
+              throw new Error("Account setup required. Please contact administrator or use setup link.");
+            }
+            
+            const isValid = await bcrypt.compare(password, practitioner.password);
+            if (!isValid) {
+              throw new Error("Invalid credentials");
+            }
+            
+            return {
+              id: practitioner._id.toString(),
+              name: practitioner.name,
+              email: practitioner.email,
+              image: practitioner.image,
+              userType: "practitioner"
+            };
+          }
           
           // Check if this is a registration request (has name field)
           if (name) {
@@ -118,13 +144,13 @@ export const authOptions = {
         }
       }
       return true;
-    },      async jwt({ token, user, account, trigger, session }) {
-      // Initial sign in
+    },      async jwt({ token, user, account, trigger, session }) {      // Initial sign in
       if (user) {
         // Store the ID both in token.id and token.sub for compatibility
         token.id = user.id;
         token.sub = user.id; 
         token.onboardingCompleted = user.onboardingCompleted;
+        token.userType = user.userType;
         
         console.log('JWT callback - user ID set:', user.id);
       }
@@ -136,11 +162,11 @@ export const authOptions = {
       }
       
       return token;
-    },
-    async session({ session, token }) {
+    },    async session({ session, token }) {
       if (token) {
         session.user.id = token.id || token.sub;
         session.user.onboardingCompleted = token.onboardingCompleted;
+        session.user.userType = token.userType;
       }
       return session;
     }

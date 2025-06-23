@@ -6,13 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, Video, Phone, MessageCircle, Star, MapPin, MoreVertical, Plus } from "lucide-react";
+import { Calendar, Clock, Video, Phone, MessageCircle, Star, MapPin, MoreVertical, Plus, HandHeart } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import HandshakeModal from "@/components/HandshakeModal";
 import { useRouter } from "next/navigation";
 
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showHandshake, setShowHandshake] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
   const router = useRouter();
   useEffect(() => {
     // Load appointments from API
@@ -26,8 +29,7 @@ export default function AppointmentsPage() {
         }
         
         const { appointments: dbAppointments } = await response.json();
-        
-        // Format appointments for UI display
+          // Format appointments for UI display
         const formattedAppointments = dbAppointments.map(appt => ({
           id: appt._id,
           practitioner: {
@@ -44,6 +46,11 @@ export default function AppointmentsPage() {
           bookingId: appt.bookingId || `BK${Date.now().toString().substring(7)}`,
           status: appt.status,
           duration: appt.duration || "50 minutes",
+          sessionPrice: appt.sessionPrice,
+          isIntroductorySession: appt.isIntroductorySession || false,
+          handshakeCompleted: appt.handshakeCompleted || false,
+          userHandshake: appt.userHandshake,
+          practitionerHandshake: appt.practitionerHandshake,
           notes: appt.notes
         }));
         
@@ -83,12 +90,18 @@ export default function AppointmentsPage() {
         return "Video Call";
     }
   };
-
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status, isIntroductory, handshakeCompleted, userHandshake) => {
     switch (status) {
       case "confirmed":
         return <Badge className="bg-green-100 text-green-800 border-green-200">Confirmed</Badge>;
       case "completed":
+        if (isIntroductory && userHandshake === null) {
+          return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Needs Handshake</Badge>;
+        } else if (isIntroductory && handshakeCompleted) {
+          return <Badge className="bg-green-100 text-green-800 border-green-200">Handshake Complete</Badge>;
+        } else if (isIntroductory && !handshakeCompleted) {
+          return <Badge variant="secondary">No Match</Badge>;
+        }
         return <Badge variant="secondary">Completed</Badge>;
       case "cancelled":
         return <Badge variant="destructive">Cancelled</Badge>;
@@ -119,7 +132,6 @@ export default function AppointmentsPage() {
     console.log("Reschedule:", appointment);
     alert("Reschedule functionality would be implemented here");
   };
-
   const handleCancel = (appointment) => {
     // Mock cancel
     console.log("Cancel:", appointment);
@@ -133,8 +145,73 @@ export default function AppointmentsPage() {
     }
   };
 
+  const handleMarkCompleted = async (appointment) => {
+    // Helper function for testing - mark session as completed
+    try {
+      const response = await fetch(`/api/appointments/${appointment.id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'completed' }),
+      });
+      
+      if (response.ok) {
+        // Refresh appointments
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Error marking as completed:', error);
+    }
+  };
   const handleBookNew = () => {
     router.push("/matches/list");
+  };
+
+  const handleHandshake = (appointment) => {
+    setSelectedAppointment(appointment);
+    setShowHandshake(true);
+  };
+
+  const handleHandshakeComplete = (result) => {
+    // Refresh appointments to show updated status
+    const loadAppointments = async () => {
+      try {
+        const response = await fetch('/api/appointments');
+        if (response.ok) {
+          const { appointments: dbAppointments } = await response.json();
+          const formattedAppointments = dbAppointments.map(appt => ({
+            id: appt._id,
+            practitioner: {
+              id: appt.practitioner._id,
+              name: appt.practitioner.name,
+              image: appt.practitioner.image,
+              specializations: appt.practitioner.specializations,
+              rating: appt.practitioner.rating,
+              location: appt.practitioner.location
+            },
+            date: new Date(appt.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            time: appt.time,
+            sessionType: appt.sessionType,
+            bookingId: appt.bookingId || `BK${Date.now().toString().substring(7)}`,
+            status: appt.status,
+            duration: appt.duration || "50 minutes",
+            sessionPrice: appt.sessionPrice,
+            isIntroductorySession: appt.isIntroductorySession || false,
+            handshakeCompleted: appt.handshakeCompleted || false,
+            userHandshake: appt.userHandshake,
+            practitionerHandshake: appt.practitionerHandshake,
+            notes: appt.notes
+          }));
+          setAppointments(formattedAppointments);
+        }
+      } catch (error) {
+        console.error('Error refreshing appointments:', error);
+      }
+    };
+    
+    loadAppointments();
+    setShowHandshake(false);
   };
 
   if (isLoading) {
@@ -210,13 +287,17 @@ export default function AppointmentsPage() {
                             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                             <span className="text-sm">{appointment.practitioner.rating}</span>
                             <span className="text-sm text-muted-foreground">•</span>
-                            <MapPin className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">{appointment.practitioner.location}</span>
+                            <MapPin className="h-3 w-3 text-muted-foreground" />                            <span className="text-sm text-muted-foreground">{appointment.practitioner.location}</span>
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        {getStatusBadge(appointment.status)}
+                        {appointment.isIntroductorySession && (
+                          <Badge variant="outline" className="mb-2 bg-blue-50 text-blue-700 border-blue-200">
+                            Introductory Session
+                          </Badge>
+                        )}
+                        {getStatusBadge(appointment.status, appointment.isIntroductorySession, appointment.handshakeCompleted, appointment.userHandshake)}
                       </div>
                     </div>
                   </CardHeader>
@@ -235,8 +316,7 @@ export default function AppointmentsPage() {
                         <span className="text-sm">{getSessionTypeLabel(appointment.sessionType)}</span>
                       </div>
                     </div>
-                    
-                    <div className="flex space-x-2">
+                      <div className="flex space-x-2">
                       <Button 
                         size="sm" 
                         onClick={() => handleJoinSession(appointment)}
@@ -258,6 +338,17 @@ export default function AppointmentsPage() {
                       >
                         Cancel
                       </Button>
+                      {/* Test button for marking introductory sessions as completed */}
+                      {appointment.isIntroductorySession && process.env.NODE_ENV === 'development' && (
+                        <Button 
+                          variant="secondary" 
+                          size="sm" 
+                          onClick={() => handleMarkCompleted(appointment)}
+                          className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                        >
+                          [Test] Complete
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -301,13 +392,17 @@ export default function AppointmentsPage() {
                           <div className="flex items-center space-x-2 mt-1">
                             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                             <span className="text-sm">{appointment.practitioner.rating}</span>
-                            <span className="text-sm text-muted-foreground">•</span>
-                            <span className="text-sm text-muted-foreground">{appointment.duration}</span>
+                            <span className="text-sm text-muted-foreground">•</span>                            <span className="text-sm text-muted-foreground">{appointment.duration}</span>
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        {getStatusBadge(appointment.status)}
+                        {appointment.isIntroductorySession && (
+                          <Badge variant="outline" className="mb-2 bg-blue-50 text-blue-700 border-blue-200">
+                            Introductory Session
+                          </Badge>
+                        )}
+                        {getStatusBadge(appointment.status, appointment.isIntroductorySession, appointment.handshakeCompleted, appointment.userHandshake)}
                       </div>
                     </div>
                   </CardHeader>
@@ -333,23 +428,37 @@ export default function AppointmentsPage() {
                           &quot;{appointment.notes}&quot;
                         </p>
                       </div>
-                    )}
-                    
+                    )}                    
                     <div className="flex space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={handleBookNew}
-                        className="flex-1"
-                      >
-                        Book Again
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                      >
-                        Leave Review
-                      </Button>
+                      {appointment.isIntroductorySession && 
+                       appointment.status === 'completed' && 
+                       appointment.userHandshake === null ? (
+                        <Button 
+                          size="sm" 
+                          onClick={() => handleHandshake(appointment)}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700"
+                        >
+                          <HandHeart className="h-4 w-4 mr-2" />
+                          Complete Handshake
+                        </Button>
+                      ) : (
+                        <>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={handleBookNew}
+                            className="flex-1"
+                          >
+                            Book Again
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                          >
+                            Leave Review
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -368,10 +477,17 @@ export default function AppointmentsPage() {
                   </Button>
                 </CardContent>
               </Card>
-            )}
-          </TabsContent>
+            )}          </TabsContent>
         </Tabs>
       </div>
+
+      {/* Handshake Modal */}
+      <HandshakeModal 
+        appointment={selectedAppointment}
+        isOpen={showHandshake}
+        onClose={() => setShowHandshake(false)}
+        onHandshakeComplete={handleHandshakeComplete}
+      />
     </div>
   );
 }

@@ -33,10 +33,33 @@ const AppointmentSchema = new mongoose.Schema({
     type: String,
     enum: ['confirmed', 'completed', 'cancelled', 'no-show'],
     default: 'confirmed'
-  },
-  duration: {
+  },  duration: {
     type: String,
     default: '50 minutes'
+  },
+  sessionPrice: {
+    type: Number,
+    required: true
+  },
+  isIntroductorySession: {
+    type: Boolean,
+    default: false
+  },  handshakeCompleted: {
+    type: Boolean,
+    default: false
+  },
+  handshakeStatus: {
+    type: String,
+    enum: ['pending_user', 'pending_practitioner', 'completed', 'declined'],
+    default: 'pending_user'
+  },
+  userHandshake: {
+    type: Boolean,
+    default: null
+  },
+  practitionerHandshake: {
+    type: Boolean,
+    default: null
   },
   notes: {
     type: String,
@@ -68,5 +91,6 @@ AppointmentSchema.index({ user: 1, createdAt: -1 });
 AppointmentSchema.index({ practitioner: 1, createdAt: -1 });
 AppointmentSchema.index({ bookingId: 1 });
 AppointmentSchema.index({ status: 1 });
+AppointmentSchema.index({ handshakeStatus: 1 });
 
 export default mongoose.models.Appointment || mongoose.model('Appointment', AppointmentSchema);

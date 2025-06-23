@@ -65,11 +65,23 @@ export default function Page() {
   const handleFindListener = () => {
     // Always go to onboarding first - it will handle redirects as needed
     router.push("/onboarding");
+  };  const handleTakeQuiz = () => {
+    // If user is authenticated, redirect to matches list; otherwise to onboarding
+    if (isAuthenticated && onboardingCompleted !== null) {
+      router.push("/matches/list");
+    } else {
+      router.push("/onboarding");
+    }
   };
 
-  const handleTakeQuiz = () => {
-    // Redirect to quiz/onboarding
-    router.push("/onboarding");
+  const handleScrollToHowItWorks = () => {
+    const howItWorksSection = document.getElementById("how-it-works");
+    if (howItWorksSection) {
+      howItWorksSection.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }
   };
 
   useEffect(() => {
@@ -234,8 +246,7 @@ export default function Page() {
                   </h1>
                   <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
                     {homeData.hero.description}
-                  </p>{" "}
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  </p>{" "}                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     {isLoading ? (
                       <Button variant="default" size="lg" disabled>
                         Loading...
@@ -246,10 +257,9 @@ export default function Page() {
                         size="lg"
                         onClick={handleTakeQuiz}
                       >
-                        {homeData.hero.buttons[0].text}
+                        {isAuthenticated ? "View Your Matches" : homeData.hero.buttons[0].text}
                       </Button>
-                    )}
-                    <Button variant="outline" size="lg" className="group">
+                    )}                    <Button variant="outline" size="lg" className="group" onClick={handleScrollToHowItWorks}>
                       {homeData.hero.buttons[1].text}
                       <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </Button>
@@ -524,6 +534,7 @@ export default function Page() {
                       variant="secondary"
                       size="lg"
                       className={homeData.corporate.button.className}
+                      onClick={handleFindListener}
                     >
                       {homeData.corporate.button.text}
                     </Button>
@@ -533,7 +544,7 @@ export default function Page() {
               {/* How It Works Section with Parallax */}
               <motion.section
                 id="how-it-works"
-                className=" mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 bg-secondary"
+                className=" mx-auto mt-3 px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 bg-gradient-to-br from-secondary via-blue-50/30 to-secondary"
                 style={{ y: howItWorksParallaxY }}
               >
                 <div className="text-center mb-8 sm:mb-12 lg:mb-16">
@@ -657,14 +668,13 @@ export default function Page() {
                       >
                         Loading...
                       </Button>
-                    ) : (
-                      <Button
+                    ) : (                      <Button
                         variant="default"
                         size="lg"
                         onClick={handleTakeQuiz}
                         className={homeData.cta.buttons[0].className}
                       >
-                        {homeData.cta.buttons[0].text}
+                        {isAuthenticated ? "View Your Matches" : homeData.cta.buttons[0].text}
                         <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
                       </Button>
                     )}

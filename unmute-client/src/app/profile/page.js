@@ -13,11 +13,13 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Mail, Phone, MapPin, Calendar, Edit, Save, X, Plus, Clock } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import { useToast } from "@/context/ToastContext";
 import { primaryReasonOptions, desiredOutcomeOptions, obstacleOptions, readinessOptions, ageGroupOptions, practitionerGenderOptions } from "@/utils/preferencesOptions";
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { toast } = useToast();
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -95,13 +97,14 @@ export default function ProfilePage() {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Failed to update profile');
         }
-        
-        const data = await response.json();
+          const data = await response.json();
         setUser(data.user);
         setIsEditing(false);
+        toast.profileUpdated();
         
       } catch (err) {
         console.error('Error saving profile:', err);
+        toast.error('Failed to save profile changes. Please try again.');
         setError('Failed to save profile changes. Please try again.');
       } finally {
         setIsSaving(false);
@@ -189,12 +192,13 @@ export default function ProfilePage() {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to update notifications');
       }
-      
-      const data = await response.json();
+        const data = await response.json();
       setUser(data.user);
+      toast.success('All notifications marked as read');
       
     } catch (err) {
       console.error('Error updating notifications:', err);
+      toast.error('Failed to mark notifications as read. Please try again.');
       setError('Failed to mark notifications as read. Please try again.');
     }
   };

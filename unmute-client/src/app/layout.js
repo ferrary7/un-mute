@@ -3,6 +3,8 @@ import "./globals.css";
 import SessionProvider from "@/components/SessionProvider";
 import { Heart } from "lucide-react";
 import { OnboardingProvider } from '@/context/OnboardingContext';
+import { ToastProvider } from '@/context/ToastContext';
+import { Toaster } from '@/components/ui/toaster';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,10 +26,12 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <SessionProvider>
+      >        <SessionProvider>
           <OnboardingProvider>
-            {children}
+            <ToastProvider>
+              {children}
+              <Toaster />
+            </ToastProvider>
           </OnboardingProvider>
         </SessionProvider>
       </body>
